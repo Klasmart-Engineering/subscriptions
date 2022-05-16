@@ -14,8 +14,6 @@ import (
 	"subscriptions.demo/handler"
 	"subscriptions.demo/instrument"
 	logging "subscriptions.demo/log"
-	redpanda "subscriptions.demo/messaging"
-
 	"syscall"
 	"time"
 )
@@ -66,7 +64,7 @@ func startServer() {
 	newRelic, _ := instrument.GetNewRelic("Subscription Service", logger)
 	httpHandler := handler.NewHandler(database, newRelic.App, cfg, ctx)
 
-	go redpanda.StartConsumers(ctx, cfg, database)
+	go handler.StartConsumers(ctx)
 
 	server := &http.Server{
 		Handler: httpHandler,

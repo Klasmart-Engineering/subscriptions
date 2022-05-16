@@ -5,7 +5,6 @@ import (
 	"github.com/go-chi/render"
 	"net/http"
 	"strconv"
-	redpanda "subscriptions.demo/messaging"
 	"subscriptions.demo/models"
 	"time"
 )
@@ -31,7 +30,7 @@ func evaluateSubscriptionsUsage(w http.ResponseWriter, r *http.Request) {
 
 		var evaluatedSubscription = models.EvaluatedSubscription{SubscriptionId: subscriptionToEvaluate.ID, Products: prod, DateFromEpoch: subscriptionToEvaluate.LastProcessedTime, DateToEpoch: strconv.FormatInt(now.Unix(), 10)}
 
-		redpanda.PublishSubscriptionUsage(evaluatedSubscription, config.Kafka, cntxt)
+		PublishSubscriptionUsage(evaluatedSubscription, cntxt)
 		dbInstance.UpdateLastProcessed(&subscriptionToEvaluate)
 	}
 
