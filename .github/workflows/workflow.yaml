@@ -35,7 +35,7 @@ jobs:
       uses: KL-Engineering/github-action-workflows/.github/actions/docker-build-push@v3.2.0
       with:
         image_name: ${{ env.ECR_REPOSITORY }}
-        dockerfile: Dockerfile
+        dockerfile: Dockerfile-local
         platforms: linux/amd64,linux/arm64
         tags: |
           type=ref,event=branch,suffix=-{{sha}}
