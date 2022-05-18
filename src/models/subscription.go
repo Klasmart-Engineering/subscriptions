@@ -6,7 +6,7 @@ import (
 )
 
 type EvaluatedSubscription struct {
-	SubscriptionId int                            `json:"subscriptionId"`
+	SubscriptionId string                         `json:"subscriptionId"`
 	Products       []EvaluatedSubscriptionProduct `json:"products"`
 	DateFromEpoch  string                         `json:"dateFromEpoch"`
 	DateToEpoch    string                         `json:"dateToEpoch"`
@@ -18,11 +18,15 @@ type EvaluatedSubscriptionProduct struct {
 	UsageAmount int    `json:"usageAmount"`
 }
 
+type SubscriptionEvaluationProduct struct {
+	Threshold int    `json:"threshold"`
+	Name      string `json:"name"`
+	Type      string `json:"type"`
+}
+
 type SubscriptionEvaluation struct {
-	ID                int
-	Product           string
-	Threshold         int
-	Name              string
+	ID                string
+	Products          []SubscriptionEvaluationProduct
 	LastProcessedTime string
 }
 

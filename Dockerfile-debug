@@ -1,10 +1,10 @@
 # Compile stage
-FROM golang:1.17 AS build-env
+FROM golang:1.18 AS build-env
 
 # Build Delve
 RUN go install github.com/go-delve/delve/cmd/dlv@latest
 
-ADD . /dockerdev
+ADD ./src /dockerdev
 WORKDIR /dockerdev
 
 # Compile the application with the optimizations turned off

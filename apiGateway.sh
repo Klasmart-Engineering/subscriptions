@@ -5,21 +5,20 @@ set -e
 echo "Enter number of requests:"
 read -r requestCount
 
-echo "Enter User ID:"
-read -r GUID
+echo "Enter Subscription ID:"
+read -r SubId
 echo
 
 for i in $(seq 1 "$requestCount")
 do
-   http_response=$(curl -s -o response.json -w "%{http_code}" -X POST 'http://localhost:8010/log' \
+#  TODO update this to point at the gateway instead of the app once Redpanda is running in K8s.
+   http_response=$(curl -s -o response.json -w "%{http_code}" -X POST 'http://localhost:8080/log-action' \
                                                               -H 'Content-Type: application/json' \
                                                               -d '{
-                                                                  "GUID": "'"$GUID"'",
-                                                                  "subscriptionAccountId": 123,
+                                                                  "SubscriptionId": "'"$SubId"'",
                                                                   "actionType": "API Call",
                                                                   "usageAmount": 1,
                                                                   "product": "Simple Teacher Module"
-
                                                               }')
 
 #   echo "Status:   "  "$http_response"

@@ -63,8 +63,8 @@ CREATE TABLE if not exists subscription_account_product
 
 
 INSERT INTO subscription_account_product (subscription_id, product, type, action)
-VALUES (1, 'Simple Teacher Module', 'Uncapped', 'API Call'),
-       (1, 'Homework', 'Uncapped', 'API Call');
+VALUES ((SELECT id FROM subscription_account), 'Simple Teacher Module', 'Uncapped', 'API Call'),
+       ((SELECT id FROM subscription_account), 'Homework', 'Uncapped', 'API Call');
 
 CREATE TABLE if not exists subscription_account_log
 (
@@ -74,6 +74,8 @@ CREATE TABLE if not exists subscription_account_log
     product_name    varchar                                            NOT NULL,
     interaction_at  timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     FOREIGN KEY (subscription_id) REFERENCES subscription_account (id),
-    FOREIGN KEY (product_name) REFERENCES subscription_account_product (product),
     PRIMARY KEY (subscription_id, action_type, product_name, interaction_at)
 );
+
+INSERT INTO subscription_account_log (subscription_id, action_type, usage, product_name, interaction_at)
+VALUES ((SELECT id FROM subscription_account), 'API Call', 1, 'Simple Teacher Module', NOW());
