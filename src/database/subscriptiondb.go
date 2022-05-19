@@ -5,7 +5,7 @@ import (
 	"fmt"
 	uuid2 "github.com/google/uuid"
 	"log"
-	"subscriptions.demo/models"
+	"subscriptions/models"
 	"time"
 )
 

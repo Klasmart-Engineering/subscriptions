@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/segmentio/kafka-go"
 	"log"
-	"subscriptions.demo/models"
+	"subscriptions/models"
 )
 
 type Config struct {
@@ -144,7 +144,7 @@ func ConsumeCreateSubscription(ctx context.Context) {
 			if err != nil {
 				panic("could not read message " + err.Error())
 			}
-			fmt.Println("received: ", string(msg.Value)) //TODO what metadata is passed here? Tracking ID etc. should we persist/validate
+			fmt.Println("received: ", string(msg.Value)) //TODO what metadata is passed here? Tracking ID etc. should we persist/validate/return when created
 
 			/* TODO
 			- Validation/Checks (Subscription already created - if we get any info?)

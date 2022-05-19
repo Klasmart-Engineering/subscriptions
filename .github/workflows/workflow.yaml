@@ -7,7 +7,7 @@ on:
 
 env:
   AWS_REGION: eu-west-2
-  ECR_REPOSITORY: subscriptions-service #TODO sort
+  ECR_REPOSITORY: subscriptions-service
   
 jobs:
   test:

@@ -14,5 +14,7 @@ postgres-data
 *.so
 *.dylib
 
+src/subscriptions
+response.json
 # Test binary, built with `go test -c`
 *.test

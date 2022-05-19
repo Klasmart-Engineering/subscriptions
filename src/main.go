@@ -9,20 +9,22 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"subscriptions.demo/config"
-	"subscriptions.demo/database"
-	"subscriptions.demo/handler"
-	"subscriptions.demo/instrument"
-	logging "subscriptions.demo/log"
+	"subscriptions/config"
+	db "subscriptions/database"
+	"subscriptions/handler"
+	"subscriptions/instrument"
+	logging "subscriptions/log"
 	"syscall"
 	"time"
 )
 
 func main() {
-	startServer()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	startServer(ctx)
 }
 
-func startServer() {
+func startServer(ctx context.Context) {
 
 	addr := ":8080"
 	listener, err := net.Listen("tcp", addr)
@@ -30,8 +32,6 @@ func startServer() {
 		log.Fatalf("Error occurred: %s", err.Error())
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 	l, _ := zap.NewDevelopment()
 	logger := logging.Wrap(l)
 

@@ -36,10 +36,5 @@ type Kafka struct {
 	WriterRequiredAcks int // -1
 	WriterMaxAttempts  int // 3
 
-	CreateOrganizationTopic   string // "organization"
-	CreateOrganizationWorkers int    // 3
-
 	DeadLetterQueueTopic string // "dead-letter-queue"
-
-	OrganizationsGroupID string // "organizations_group"
 }

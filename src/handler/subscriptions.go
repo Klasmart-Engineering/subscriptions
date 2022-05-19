@@ -5,7 +5,7 @@ import (
 	"github.com/go-chi/render"
 	"net/http"
 	"strconv"
-	"subscriptions.demo/models"
+	"subscriptions/models"
 	"time"
 )
 
