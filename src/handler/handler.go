@@ -21,12 +21,12 @@ func NewHandler(db db.Database, newRelicApp newrelic.Application, cfg *conf.Conf
 	cntxt = ctx
 	router.MethodNotAllowed(methodNotAllowedHandler)
 	router.NotFound(notFoundHandler)
-	router.HandleFunc(newrelic.WrapHandleFunc(newRelicApp, "/healthcheck", dbHealthcheck))
-	router.HandleFunc(newrelic.WrapHandleFunc(newRelicApp, "/liveness", applicationLiveness))
-	router.HandleFunc(newrelic.WrapHandleFunc(newRelicApp, "/subscription-types", getAllSubscriptionTypes))
-	router.HandleFunc(newrelic.WrapHandleFunc(newRelicApp, "/subscription-actions", getAllSubscriptionActions))
-	router.HandleFunc(newrelic.WrapHandleFunc(newRelicApp, "/log-action", logAccountAction))
-	router.HandleFunc(newrelic.WrapHandleFunc(newRelicApp, "/evaluate-subscriptions", evaluateSubscriptionsUsage))
+	router.Get(newrelic.WrapHandleFunc(newRelicApp, "/healthcheck", dbHealthcheck))
+	router.Get(newrelic.WrapHandleFunc(newRelicApp, "/liveness", applicationLiveness))
+	router.Get(newrelic.WrapHandleFunc(newRelicApp, "/subscription-types", getAllSubscriptionTypes))
+	router.Get(newrelic.WrapHandleFunc(newRelicApp, "/subscription-actions", getAllSubscriptionActions))
+	router.Post(newrelic.WrapHandleFunc(newRelicApp, "/log-action", logAccountAction))
+	router.Post(newrelic.WrapHandleFunc(newRelicApp, "/evaluate-subscriptions", evaluateSubscriptionsUsage))
 	return router
 }
 func methodNotAllowedHandler(w http.ResponseWriter, r *http.Request) {

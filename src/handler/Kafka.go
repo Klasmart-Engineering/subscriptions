@@ -45,18 +45,21 @@ func ConsumeDeleteSubscription(ctx context.Context) {
 
 			if !valid || err != nil {
 				PublishSubscriptionDeleteError(err.Error(), ctx)
+				return
 			}
 
 			// Get a subscription evaluation (all products)
 			evaluation, err := dbInstance.GetSubscriptionEvaluation(subscriptionId)
 			if err != nil {
 				PublishSubscriptionDeleteError(err.Error(), ctx)
+				return
 			}
 
 			err = dbInstance.UnsubscribeFromProducts(subscriptionId)
 
 			if err != nil {
 				PublishSubscriptionDeleteError(err.Error(), ctx)
+				return
 			}
 
 			// Create a summary
@@ -65,6 +68,7 @@ func ConsumeDeleteSubscription(ctx context.Context) {
 			subscriptionUUID, err := uuid.Parse(subscriptionId)
 			if err != nil {
 				PublishSubscriptionDeleteError(err.Error(), ctx)
+				return
 			}
 
 			publishSubscriptionDeleted(ctx, subscriptionUUID)
@@ -112,7 +116,8 @@ func ConsumeSubscriptionUpdated(ctx context.Context) {
 		default:
 			msg, err := kafkaReader.ReadMessage(ctx)
 			if err != nil {
-				panic("could not read message " + err.Error())
+				log.Println("could not read message " + err.Error()) // TODO update to error topic
+				return
 			}
 			fmt.Println("received: ", string(msg.Value))
 
@@ -142,7 +147,8 @@ func ConsumeCreateSubscription(ctx context.Context) {
 		default:
 			msg, err := kafkaReader.ReadMessage(ctx)
 			if err != nil {
-				panic("could not read message " + err.Error())
+				PublishSubscriptionCreateError(err.Error(), ctx)
+				return
 			}
 			fmt.Println("received: ", string(msg.Value)) //TODO what metadata is passed here? Tracking ID etc. should we persist/validate/return when created
 
@@ -153,7 +159,8 @@ func ConsumeCreateSubscription(ctx context.Context) {
 
 			subscriptionId, err := dbInstance.CreateSubscription()
 			if err != nil {
-				panic("Unable to create subscription")
+				PublishSubscriptionCreateError(err.Error(), ctx)
+				return
 			}
 
 			publishSubscriptionCreated(ctx, subscriptionId)
@@ -177,7 +184,8 @@ func publishSubscriptionCreated(ctx context.Context, uuid uuid.UUID) {
 		},
 	)
 	if err != nil {
-		panic("could not write message " + err.Error())
+		PublishSubscriptionCreateError("Could not write message to topic"+err.Error(), ctx)
+		return
 	}
 }
 
@@ -197,7 +205,8 @@ func publishSubscriptionDeleted(ctx context.Context, uuid uuid.UUID) {
 		},
 	)
 	if err != nil {
-		panic("could not write message " + err.Error())
+		PublishSubscriptionDeleteError("could not write message "+err.Error(), ctx)
+		return
 	}
 }
 
@@ -259,14 +268,34 @@ func PublishSubscriptionDeleteError(errorMessage string, ctx context.Context) {
 		//Logger: &config.Logger,
 	}
 
-	error := kafkaWriter.WriteMessages(
+	err := kafkaWriter.WriteMessages(
 		ctx,
 		kafka.Message{
 			Key:   []byte("SubscriptionDeleteError"), //TODO sort
 			Value: []byte(errorMessage),
 		},
 	)
-	if error != nil {
-		panic("could not write message " + error.Error())
+	if err != nil {
+		panic("could not write message " + err.Error())
+	}
+}
+
+func PublishSubscriptionCreateError(errorMessage string, ctx context.Context) {
+
+	kafkaWriter := kafka.Writer{
+		Addr:  kafka.TCP(config.Kafka.Brokers...),
+		Topic: "subscriptions.fct.SubscriptionCreateError",
+		//Logger: &config.Logger,
+	}
+
+	err := kafkaWriter.WriteMessages(
+		ctx,
+		kafka.Message{
+			Key:   []byte("SubscriptionCreateError"), //TODO sort
+			Value: []byte(errorMessage),
+		},
+	)
+	if err != nil {
+		panic("could not write message " + err.Error())
 	}
 }

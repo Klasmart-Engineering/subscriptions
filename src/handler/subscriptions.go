@@ -20,9 +20,6 @@ func evaluateSubscriptionsUsage(w http.ResponseWriter, r *http.Request) {
 		EvaluateSubscription(subscriptionToEvaluate)
 	}
 
-	// look in log for each since last_processed_time ands tally that up
-	// also use NOW on that query. Return that and also set that on the JSON response
-	// send message to Kafka topic and then update last_processed.
 	// do this as part of a transaction
 }
 

@@ -3,7 +3,7 @@ services:
   web:
     build:
       context: .
-      dockerfile: Dockerfile-debug
+      dockerfile: Dockerfile-local
     ports:
       - "8070:8080"
     depends_on:

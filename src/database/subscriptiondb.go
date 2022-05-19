@@ -124,8 +124,8 @@ func (db Database) UpdateLastProcessed(subscription *models.SubscriptionEvaluati
 }
 
 func (db Database) CreateSubscription() (uuid uuid2.UUID, err error) {
-	var minutes = 43200
-	var state = 1 // Active
+	var minutes = 43200 //TODO how do we define before adding a product
+	var state = 1       // Active
 
 	var subscriptionId uuid2.UUID
 	sqlStatement := `
