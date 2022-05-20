@@ -433,3 +433,26 @@ func (db Database) GetThresholdForSubscriptionProduct(userAction models.Subscrip
 	}
 	return subscriptionThreshold, nil
 }
+
+func (db Database) AddProductToSubscription(addProduct models.AddProduct) error {
+
+	stmt, err := db.Conn.Prepare(`
+			INSERT INTO subscription_account_product (subscription_id, product, type, threshold, action)
+			VALUES ($1, $2, $3, $4, $5)`)
+	if err != nil {
+		return err
+	}
+
+	subIdUUID, es := uuid2.Parse(addProduct.SubscriptionId)
+
+	if es != nil {
+		return es
+	}
+
+	_, er := stmt.Exec(subIdUUID, addProduct.Product, addProduct.Type, addProduct.Threshold, addProduct.Action)
+	if er != nil {
+		return er
+	}
+
+	return nil
+}

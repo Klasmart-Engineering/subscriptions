@@ -21,7 +21,7 @@ CREATE TABLE if not exists subscription_action
 
 INSERT INTO subscription_action (name, description, unit)
 VALUES ('API Call', 'User interaction with public API Gateway', 'HTTP Requests'),
-       ('Account Created', 'Account created action', 'Account Created');
+       ('UserLogin', 'User Login Action', 'Account Active');
 
 
 CREATE TABLE if not exists subscription_state
