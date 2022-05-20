@@ -99,6 +99,7 @@ type SubscriptionAccountAction struct {
 	ActionType     string `json:"actionType"`
 	UsageAmount    int    `json:"usageAmount"`
 	Product        string `json:"product"`
+	UserId         string `json:"userId"`
 }
 
 type SubscriptionChange struct {
