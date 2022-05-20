@@ -3,6 +3,7 @@ module subscriptions
 go 1.18
 
 require (
+	github.com/cenkalti/backoff/v4 v4.1.3
 	github.com/go-chi/chi v1.5.4
 	github.com/go-chi/render v1.0.1
 	github.com/google/uuid v1.3.0
@@ -10,7 +11,6 @@ require (
 	github.com/newrelic/go-agent v3.15.2+incompatible
 	github.com/segmentio/kafka-go v0.4.31
 	go.uber.org/zap v1.21.0
-
 )
 
 require (
