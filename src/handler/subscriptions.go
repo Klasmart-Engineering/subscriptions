@@ -151,10 +151,12 @@ func LogAction(accountAction models.SubscriptionAccountAction) models.LogRespons
 	}
 
 	if !active {
+		dbInstance.UpdateChargeableLog(accountAction)
 		return models.LogResponse{Success: false, Details: "BLOCKED. Subscription not active", Count: interactions, Limit: threshold}
 	}
 
 	if threshold != 0 && interactions > threshold {
+		dbInstance.UpdateChargeableLog(accountAction)
 		return models.LogResponse{Success: false, Details: "BLOCKED", Count: interactions, Limit: threshold}
 	}
 

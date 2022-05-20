@@ -162,7 +162,7 @@ func (db Database) UsageOfSubscription(subscriptionEvaluation models.Subscriptio
 			FROM subscription_account_product sap
 			LEFT JOIN subscription_account_log sal
 			 ON sal.subscription_id = sap.subscription_id AND sal.product_name = sap.product
-			WHERE sal.subscription_id = $1 AND sal.product_name = $2 `
+			WHERE sal.subscription_id = $1 AND sal.product_name = $2 AND sal.valid_usage = TRUE `
 
 	var countInteractionWithTimestamp = " and sal.interaction_at > $3"
 	var groupBySql = " GROUP BY sap.product, sap.threshold, sap.type"
@@ -345,7 +345,7 @@ func (db Database) LogUserAction(accountAction models.SubscriptionAccountAction)
 
 	stmt, es := db.Conn.Prepare(`
 			INSERT INTO subscription_account_log (subscription_id, action_type, usage, product_name, interaction_at)
-			VALUES ($1, $2, $3, $4, NOW())`)
+			VALUES ($1, $2, $3, $4, to_timestamp($5))`)
 	if es != nil {
 		panic(es.Error())
 	}
@@ -354,7 +354,27 @@ func (db Database) LogUserAction(accountAction models.SubscriptionAccountAction)
 	if es != nil {
 		panic(es.Error())
 	}
-	_, er := stmt.Exec(subIdUUID, accountAction.ActionType, accountAction.UsageAmount, accountAction.Product)
+	_, er := stmt.Exec(subIdUUID, accountAction.ActionType, accountAction.UsageAmount, accountAction.Product, accountAction.InteractionTimeEpoch)
+	if er != nil {
+		panic(er.Error())
+	}
+
+}
+
+func (db Database) UpdateChargeableLog(accountAction models.SubscriptionAccountAction) {
+
+	stmt, es := db.Conn.Prepare(`
+			UPDATE subscription_account_log SET valid_usage = FALSE
+			WHERE subscription_id = $1 AND action_type = $2 AND usage = $3 AND product_name = $4 AND interaction_at = to_timestamp($5)`)
+	if es != nil {
+		panic(es.Error())
+	}
+	subIdUUID, es := uuid2.Parse(accountAction.SubscriptionId)
+
+	if es != nil {
+		panic(es.Error())
+	}
+	_, er := stmt.Exec(subIdUUID, accountAction.ActionType, accountAction.UsageAmount, accountAction.Product, accountAction.InteractionTimeEpoch)
 	if er != nil {
 		panic(er.Error())
 	}
@@ -377,7 +397,7 @@ func (db Database) CountInteractionsForSubscription(userAction models.Subscripti
 	var countInteractionsSql = `
 			SELECT SUM(usage) AS user_interactions 
 			FROM subscription_account_log 
-			WHERE subscription_id = $1 AND product_name = $2 `
+			WHERE subscription_id = $1 AND product_name = $2 AND valid_usage = TRUE `
 
 	var countUserInteractions int
 	if !lastProcessedTime.IsZero() {
@@ -391,7 +411,7 @@ func (db Database) CountInteractionsForSubscription(userAction models.Subscripti
 				return countUserInteractions, fmt.Errorf("unknown count on user: %s", userAction.SubscriptionId)
 			}
 		}
-	} else {
+	} else
 		if err := db.Conn.QueryRow(countInteractionsSql,
 			userAction.SubscriptionId, userAction.Product).Scan(&countUserInteractions); err != nil {
 			if err == sql.ErrNoRows {
