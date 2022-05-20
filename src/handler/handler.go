@@ -6,8 +6,8 @@ import (
 	"github.com/go-chi/render"
 	newrelic "github.com/newrelic/go-agent"
 	"net/http"
-	conf "subscriptions/config"
-	db "subscriptions/database"
+	conf "subscriptions/src/config"
+	db "subscriptions/src/database"
 )
 
 var dbInstance db.Database

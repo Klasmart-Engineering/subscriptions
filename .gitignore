@@ -6,6 +6,7 @@
 
 # local postgres volume
 postgres-data
+postgres-integration-data
 
 # Binaries for programs and plugins
 *.exe

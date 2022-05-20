@@ -4,4 +4,4 @@ FROM postgres:14.1-alpine
 RUN apk add --update curl && \
     rm -rf /var/cache/apk/*
 
-COPY /environment/local/database/init.sql /docker-entrypoint-initdb.d/
+COPY ./database/init.sql /docker-entrypoint-initdb.d/
