@@ -1,0 +1,15 @@
+{
+  "type": "record",
+  "name": f'{topic}',
+  "fields": [
+    {
+      "name": "ID",
+      "type": "string",
+      "logicalType": "uuid"
+    },
+    {
+      "name": "Value",
+      "type": "string"
+    }
+  ]
+}
