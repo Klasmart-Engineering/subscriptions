@@ -20,7 +20,7 @@ spec:
             - containerPort: 8080
           envFrom:
             - configMapRef:
-                name: postgres-config
+                name: go-app-config
           readinessProbe:
             httpGet:
               scheme: HTTP
@@ -51,4 +51,21 @@ spec:
     app: go-app
 status:
   loadBalancer: {}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: go-app-config
+  labels:
+    app: postgres
+data:
+  POSTGRES_HOST: postgres
+  POSTGRES_DB: subscriptions
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: t35tP455w0rd
+  NEW_RELIC_ENABLED: "false"
+  NEW_RELIC_LICENSE_KEY: "newrelic_license_keynewrelic_license_key"
+  DISTRIBUTED_TRACER_ENABLED: "false"
+  SPAN_EVENT_ENABLED: "false"
+  ERROR_COLLECTOR_ENABLED: "false"
 
