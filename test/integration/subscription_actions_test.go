@@ -2,7 +2,7 @@ package subscription_types_test
 
 import (
 	"encoding/json"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"net/http"
 	"subscriptions/src/models"
 	"subscriptions/test/integration/helper"
@@ -23,6 +23,8 @@ func TestGetSubscriptionActionsReturnsCorrectActions(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	require.Equal(t, resp.StatusCode, 200)
+
 	var expectedSubscriptionActions = models.SubscriptionActionList{
 		Actions: []models.SubscriptionAction{
 			{
@@ -38,5 +40,5 @@ func TestGetSubscriptionActionsReturnsCorrectActions(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, expectedSubscriptionActions, subscriptionActions)
+	require.Equal(t, expectedSubscriptionActions, subscriptionActions)
 }

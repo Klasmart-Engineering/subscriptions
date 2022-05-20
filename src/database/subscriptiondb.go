@@ -375,7 +375,7 @@ func (db Database) CountInteractionsForSubscription(userAction models.Subscripti
 	}
 
 	var countInteractionsSql = `
-			SELECT COUNT(1) AS user_interactions 
+			SELECT SUM(usage) AS user_interactions 
 			FROM subscription_account_log 
 			WHERE subscription_id = $1 AND product_name = $2 `
 

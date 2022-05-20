@@ -1,7 +1,6 @@
 package helper
 
 import (
-	"fmt"
 	"log"
 	"os"
 	db "subscriptions/src/database"
@@ -12,12 +11,6 @@ var dropStatements = readFile("../../database/drop-all-tables.sql")
 var initStatements = readFile("../../database/init.sql")
 
 func readFile(file string) string {
-	path, err := os.Getwd()
-	if err != nil {
-		log.Println(err)
-	}
-	fmt.Println("working directory: " + path)
-
 	content, err := os.ReadFile(file)
 	if err != nil {
 		log.Panicf("Could not read %s", file)
