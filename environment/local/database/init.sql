@@ -1,63 +1,83 @@
 CREATE TABLE if not exists subscription_type
 (
-    id         SERIAL PRIMARY KEY,
-    name       character varying(255)                             NOT NULL UNIQUE,
-    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+    id   SERIAL,
+    name character varying(255) NOT NULL UNIQUE,
+    PRIMARY KEY (id)
 );
 
-INSERT INTO subscription_type (id, name)
-VALUES (1, 'Capped'),
-       (2, 'Uncapped');
+INSERT INTO subscription_type (name)
+VALUES ('Capped'),
+       ('Uncapped');
 
 
 CREATE TABLE if not exists subscription_action
 (
-    name        character varying(255) NOT NULL UNIQUE PRIMARY KEY,
+    name        character varying(255) NOT NULL UNIQUE,
     description character varying(255) NOT NULL UNIQUE,
-    unit        character varying(255) NOT NULL UNIQUE
+    unit        character varying(255) NOT NULL UNIQUE,
+    PRIMARY KEY (name)
 );
 
 
 INSERT INTO subscription_action (name, description, unit)
-VALUES ('API Call', 'User interaction with public API Gateway', 'HTTP Requests');
+VALUES ('API Call', 'User interaction with public API Gateway', 'HTTP Requests'),
+       ('Account Created', 'Account created action', 'Account Created');
+
+
+CREATE TABLE if not exists subscription_state
+(
+    id   SERIAL,
+    name character varying(255) NOT NULL UNIQUE,
+    PRIMARY KEY (id)
+);
+
+INSERT INTO subscription_state (name)
+VALUES ('Active'),
+       ('Inactive'),
+       ('Disabled'); -- TODO Disabled or Deleted?
+
 
 CREATE TABLE if not exists subscription_account
 (
-    id                    SERIAL PRIMARY KEY,
-    account_holder_id     int NOT NULL,
+    id                    uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     last_processed        timestamp with time zone,
-    run_frequency_minutes int NOT NULL,
-    active                boolean NOT NULL
+    run_frequency_minutes int    NOT NULL,
+    state                 serial NOT NULL,
+    FOREIGN KEY (state) REFERENCES subscription_state (id)
 );
 
 
-INSERT INTO subscription_account (id, account_holder_id, run_frequency_minutes, active)
-VALUES (1, 123, 5, true);
+INSERT INTO subscription_account (run_frequency_minutes, state)
+VALUES (5, 1);
 
 CREATE TABLE if not exists subscription_account_product
 (
-    subscription_id SERIAL                 NOT NULL,
+    subscription_id uuid                   NOT NULL,
     product         varchar                NOT NULL,
-    name            character varying(255) NOT NULL,
-    threshold       int                    NOT NULL,
-    action          character varying(255) NOT NULL
+    type            character varying(255) NOT NULL,
+    threshold       int                    NULL,
+    action          character varying(255) NOT NULL,
+    FOREIGN KEY (type) REFERENCES subscription_type (name),
+    FOREIGN KEY (action) REFERENCES subscription_action (name)
 );
 
 
-INSERT INTO subscription_account_product (subscription_id, product, name, threshold, action)
-VALUES
-       (1, 'Simple Teacher Module', 'Capped', 10, 'API Call'),
-       (1, 'Homework', 'Capped', 3,  'API Call');
+INSERT INTO subscription_account_product (subscription_id, product, type, action)
+VALUES ((SELECT id FROM subscription_account), 'Simple Teacher Module', 'Uncapped', 'API Call'),
+       ((SELECT id FROM subscription_account), 'Homework', 'Uncapped', 'API Call');
 
-CREATE TABLE if not exists subscription_account_user_log
+CREATE TABLE if not exists subscription_account_log
 (
-    GUID                    int,
-    subscription_account_id int                                                NOT NULL,
-    action_type             varchar                                            NOT NULL,
-    usage                   int                                                NOT NULL,
-    product                 varchar                                            NOT NULL,
-    interaction_at          timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    PRIMARY KEY (GUID, action_type, product, interaction_at)
---     CONSTRAINT account_holder_id FOREIGN KEY (subscription_account_id) REFERENCES subscription_account (account_holder_id)
+    subscription_id uuid,
+    action_type     varchar                                            NOT NULL,
+    usage           int                                                NOT NULL,
+    product_name    varchar                                            NOT NULL,
+    interaction_at  timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    user_id         varchar                                            NULL,
+    FOREIGN KEY (subscription_id) REFERENCES subscription_account (id),
+    PRIMARY KEY (subscription_id, action_type, product_name, interaction_at)
 );
+
+INSERT INTO subscription_account_log (subscription_id, action_type, usage, product_name,
+                                      interaction_at)
+VALUES ((SELECT id FROM subscription_account), 'API Call', 1, 'Simple Teacher Module', NOW());
