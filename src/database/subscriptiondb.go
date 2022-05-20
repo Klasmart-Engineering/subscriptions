@@ -411,7 +411,7 @@ func (db Database) CountInteractionsForSubscription(userAction models.Subscripti
 				return countUserInteractions, fmt.Errorf("unknown count on user: %s", userAction.SubscriptionId)
 			}
 		}
-	} else
+	} else {
 		if err := db.Conn.QueryRow(countInteractionsSql,
 			userAction.SubscriptionId, userAction.Product).Scan(&countUserInteractions); err != nil {
 			if err == sql.ErrNoRows {
