@@ -162,7 +162,7 @@ func (db Database) UsageOfSubscription(subscriptionEvaluation models.Subscriptio
 			FROM subscription_account_product sap
 			LEFT JOIN subscription_account_log sal
 			 ON sal.subscription_id = sap.subscription_id AND sal.product_name = sap.product
-			WHERE sal.subscription_id = $1 AND sal.product_name = $2 AND sal.chargeable = TRUE `
+			WHERE sal.subscription_id = $1 AND sal.product_name = $2 AND sal.valid_usage = TRUE `
 
 	var countInteractionWithTimestamp = " and sal.interaction_at > $3"
 	var groupBySql = " GROUP BY sap.product, sap.threshold, sap.type"
@@ -364,7 +364,7 @@ func (db Database) LogUserAction(accountAction models.SubscriptionAccountAction)
 func (db Database) UpdateChargeableLog(accountAction models.SubscriptionAccountAction) {
 
 	stmt, es := db.Conn.Prepare(`
-			UPDATE subscription_account_log SET chargeable = FALSE
+			UPDATE subscription_account_log SET valid_usage = FALSE
 			WHERE subscription_id = $1 AND action_type = $2 AND usage = $3 AND product_name = $4 AND interaction_at = to_timestamp($5)`)
 	if es != nil {
 		panic(es.Error())
@@ -397,7 +397,7 @@ func (db Database) CountInteractionsForSubscription(userAction models.Subscripti
 	var countInteractionsSql = `
 			SELECT SUM(usage) AS user_interactions 
 			FROM subscription_account_log 
-			WHERE subscription_id = $1 AND product_name = $2 AND chargeable = TRUE `
+			WHERE subscription_id = $1 AND product_name = $2 AND valid_usage = TRUE `
 
 	var countUserInteractions int
 	if !lastProcessedTime.IsZero() {
@@ -411,7 +411,7 @@ func (db Database) CountInteractionsForSubscription(userAction models.Subscripti
 				return countUserInteractions, fmt.Errorf("unknown count on user: %s", userAction.SubscriptionId)
 			}
 		}
-	} else {
+	} else
 		if err := db.Conn.QueryRow(countInteractionsSql,
 			userAction.SubscriptionId, userAction.Product).Scan(&countUserInteractions); err != nil {
 			if err == sql.ErrNoRows {

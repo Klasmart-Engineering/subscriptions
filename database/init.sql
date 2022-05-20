@@ -72,11 +72,11 @@ CREATE TABLE if not exists subscription_account_log
     usage           int                                                NOT NULL,
     product_name    varchar                                            NOT NULL,
     interaction_at  timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    chargeable  boolean NOT NULL DEFAULT TRUE,
+    valid_usage  boolean NOT NULL DEFAULT TRUE,
     FOREIGN KEY (subscription_id) REFERENCES subscription_account (id),
     PRIMARY KEY (subscription_id, action_type, product_name, interaction_at)
 );
 
 INSERT INTO subscription_account_log (subscription_id, action_type, usage, product_name,
-                                      interaction_at, chargeable)
+                                      interaction_at, valid_usage)
 VALUES ((SELECT id FROM subscription_account), 'API Call', 1, 'Simple Teacher Module', NOW(), TRUE);
