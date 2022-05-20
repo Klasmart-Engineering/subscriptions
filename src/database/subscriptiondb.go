@@ -340,8 +340,8 @@ func (db Database) GetAllSubscriptionActions() (*models.SubscriptionActionList, 
 func (db Database) LogUserAction(accountAction models.SubscriptionAccountAction) {
 
 	stmt, es := db.Conn.Prepare(`
-			INSERT INTO subscription_account_log (subscription_id, action_type, usage, product_name, interaction_at)
-			VALUES ($1, $2, $3, $4, NOW())`)
+			INSERT INTO subscription_account_log (subscription_id, action_type, usage, product_name, interaction_at, user_id)
+			VALUES ($1, $2, $3, $4, NOW(), $5)`)
 	if es != nil {
 		panic(es.Error())
 	}
@@ -350,7 +350,7 @@ func (db Database) LogUserAction(accountAction models.SubscriptionAccountAction)
 	if es != nil {
 		panic(es.Error())
 	}
-	_, er := stmt.Exec(subIdUUID, accountAction.ActionType, accountAction.UsageAmount, accountAction.Product)
+	_, er := stmt.Exec(subIdUUID, accountAction.ActionType, accountAction.UsageAmount, accountAction.Product, accountAction.UserId)
 	if er != nil {
 		panic(er.Error())
 	}
