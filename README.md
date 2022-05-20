@@ -10,6 +10,7 @@
   brew install kubectx 
   brew install istioctl
   brew install jq
+  brew install helm
   
   mkdir -p /tmp/k3dvol/  
   k3d cluster create factory --image rancher/k3s:v1.20.15-k3s1 --volume /tmp/k3dvol:/tmp/k3dvol --registry-create local-factory-registry -p "30001:30001@loadbalancer"
@@ -38,3 +39,13 @@
 ```
 - Then add the following configuration in Goland (TODO also add instructions for VScode)
 ![img.png](img.png)
+
+##### To run unit tests
+
+TODO
+
+##### To run integration tests
+
+```
+  ./run-integration-tests.sh
+```

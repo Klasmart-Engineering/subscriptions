@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"github.com/cenkalti/backoff/v4"
 	_ "github.com/lib/pq"
 	"log"
 )
@@ -20,17 +21,24 @@ type Database struct {
 
 func Initialize(username, password, database, host string) (Database, error) {
 	db := Database{}
-	dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		host, PORT, username, password, database)
-	conn, err := sql.Open("postgres", dsn)
-	if err != nil {
-		return db, err
+
+	connect := func() error {
+		dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+			host, PORT, username, password, database)
+		conn, err := sql.Open("postgres", dsn)
+		if err != nil {
+			return err
+		}
+		db.Conn = conn
+		err = db.Conn.Ping()
+		if err != nil {
+			return err
+		}
+		log.Println("Database connection established")
+		return nil
 	}
-	db.Conn = conn
-	err = db.Conn.Ping()
-	if err != nil {
-		return db, err
-	}
-	log.Println("Database connection established")
-	return db, nil
+
+	err := backoff.Retry(connect, backoff.NewExponentialBackOff())
+
+	return db, err
 }
