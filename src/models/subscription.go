@@ -99,10 +99,11 @@ func (*LogResponse) Render(w http.ResponseWriter, r *http.Request) error {
 }
 
 type SubscriptionAccountAction struct {
-	SubscriptionId string `json:"SubscriptionId"`
-	ActionType     string `json:"actionType"`
-	UsageAmount    int    `json:"usageAmount"`
-	Product        string `json:"product"`
+	SubscriptionId       string `json:"SubscriptionId"`
+	ActionType           string `json:"actionType"`
+	UsageAmount          int    `json:"usageAmount"`
+	Product              string `json:"product"`
+	InteractionTimeEpoch string `json:"interactionTimeEpoch"`
 }
 
 type AddProduct struct {
