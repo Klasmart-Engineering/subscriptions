@@ -16,14 +16,17 @@ type NewRelic struct {
 
 func GetNewRelic(serviceName string, logger *log.ZapLogger) (*NewRelic, error) {
 	cfg := newrelic.NewConfig(serviceName, MustGetEnv("NEW_RELIC_LICENSE_KEY"))
+	isEnabled := false
 	isDistributedTracerEnabled := false
 	isSpanEventsEnabled := false
 	isErrorCollectorEnabled := false
 
+	isEnabled, _ = strconv.ParseBool(MustGetEnv("NEW_RELIC_ENABLED"))
 	isDistributedTracerEnabled, _ = strconv.ParseBool(MustGetEnv("DISTRIBUTED_TRACER_ENABLED"))
 	isSpanEventsEnabled, _ = strconv.ParseBool(MustGetEnv("SPAN_EVENT_ENABLED"))
 	isErrorCollectorEnabled, _ = strconv.ParseBool(MustGetEnv("ERROR_COLLECTOR_ENABLED"))
 
+	cfg.Enabled = isEnabled
 	cfg.DistributedTracer.Enabled = isDistributedTracerEnabled
 	cfg.SpanEvents.Enabled = isSpanEventsEnabled
 	cfg.ErrorCollector.Enabled = isErrorCollectorEnabled
