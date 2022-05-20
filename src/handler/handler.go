@@ -26,6 +26,7 @@ func NewHandler(db db.Database, newRelicApp newrelic.Application, cfg *conf.Conf
 	router.Get(newrelic.WrapHandleFunc(newRelicApp, "/subscription-types", getAllSubscriptionTypes))
 	router.Get(newrelic.WrapHandleFunc(newRelicApp, "/subscription-actions", getAllSubscriptionActions))
 	router.Post(newrelic.WrapHandleFunc(newRelicApp, "/log-action", logAccountAction))
+	router.Post(newrelic.WrapHandleFunc(newRelicApp, "/add-product", addProduct))
 	router.Post(newrelic.WrapHandleFunc(newRelicApp, "/evaluate-subscriptions", evaluateSubscriptionsUsage))
 	return router
 }
