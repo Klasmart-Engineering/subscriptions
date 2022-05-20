@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"github.com/go-chi/render"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
@@ -89,7 +90,17 @@ func getAllSubscriptionActions(w http.ResponseWriter, r *http.Request) {
 
 func logAccountAction(w http.ResponseWriter, r *http.Request) {
 	var accountAction models.SubscriptionAccountAction
-	json.NewDecoder(r.Body).Decode(&accountAction)
+	bytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, http.StatusText(400), 400)
+		return
+	}
+
+	err = json.Unmarshal(bytes, &accountAction)
+	if err != nil {
+		http.Error(w, http.StatusText(400), 400)
+		return
+	}
 
 	var actionResponse = LogAction(accountAction)
 

@@ -46,7 +46,6 @@ CREATE TABLE if not exists subscription_account
     FOREIGN KEY (state) REFERENCES subscription_state (id)
 );
 
-
 INSERT INTO subscription_account (run_frequency_minutes, state)
 VALUES (5, 1);
 

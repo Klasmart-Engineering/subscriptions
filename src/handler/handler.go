@@ -2,9 +2,11 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
 	newrelic "github.com/newrelic/go-agent"
+	"log"
 	"net/http"
 	conf "subscriptions/src/config"
 	db "subscriptions/src/database"
@@ -19,6 +21,7 @@ func NewHandler(db db.Database, newRelicApp newrelic.Application, cfg *conf.Conf
 	dbInstance = db
 	config = *cfg
 	cntxt = ctx
+	router.Use(recovery)
 	router.MethodNotAllowed(methodNotAllowedHandler)
 	router.NotFound(notFoundHandler)
 	router.Get(newrelic.WrapHandleFunc(newRelicApp, "/healthcheck", dbHealthcheck))
@@ -30,13 +33,39 @@ func NewHandler(db db.Database, newRelicApp newrelic.Application, cfg *conf.Conf
 	router.Post(newrelic.WrapHandleFunc(newRelicApp, "/evaluate-subscriptions", evaluateSubscriptionsUsage))
 	return router
 }
+
 func methodNotAllowedHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
 	w.WriteHeader(405)
 	render.Render(w, r, ErrMethodNotAllowed)
 }
+
 func notFoundHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
 	w.WriteHeader(400)
 	render.Render(w, r, ErrNotFound)
+}
+
+func recovery(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		defer func() {
+			err := recover()
+			if err != nil {
+				log.Printf("Panic caught by recovery handler on %s request to %s: %s\n", r.Method, r.RequestURI, err)
+
+				jsonBody, _ := json.Marshal(map[string]string{
+					"error": "There was an internal server error",
+				})
+
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write(jsonBody)
+			}
+
+		}()
+
+		next.ServeHTTP(w, r)
+
+	})
 }
