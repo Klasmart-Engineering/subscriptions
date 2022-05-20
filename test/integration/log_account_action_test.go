@@ -26,10 +26,11 @@ func TestInactiveSubscriptionReturnsUnsuccessfulResponse(t *testing.T) {
 	helper.RunTestSql("inactive-subscription.sql")
 
 	var request = models.SubscriptionAccountAction{
-		SubscriptionId: "2f797c16-053e-41ab-b40d-24356480e61e",
-		ActionType:     "API Call",
-		UsageAmount:    1,
-		Product:        "Test Product",
+		SubscriptionId:       "2f797c16-053e-41ab-b40d-24356480e61e",
+		ActionType:           "API Call",
+		UsageAmount:          1,
+		Product:              "Test Product",
+		InteractionTimeEpoch: "1653085761",
 	}
 
 	requestBody, err := json.Marshal(request)
