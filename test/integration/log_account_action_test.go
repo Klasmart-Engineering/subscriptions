@@ -30,7 +30,6 @@ func TestInactiveSubscriptionReturnsUnsuccessfulResponse(t *testing.T) {
 		ActionType:     "API Call",
 		UsageAmount:    1,
 		Product:        "Test Product",
-		UserId:         "d89124a3-c20d-40fb-82ed-5038dd2aadf2",
 	}
 
 	requestBody, err := json.Marshal(request)

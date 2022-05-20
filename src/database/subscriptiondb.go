@@ -344,8 +344,8 @@ func (db Database) GetAllSubscriptionActions() (*models.SubscriptionActionList, 
 func (db Database) LogUserAction(accountAction models.SubscriptionAccountAction) {
 
 	stmt, es := db.Conn.Prepare(`
-			INSERT INTO subscription_account_log (subscription_id, action_type, usage, product_name, interaction_at, user_id)
-			VALUES ($1, $2, $3, $4, NOW(), $5)`)
+			INSERT INTO subscription_account_log (subscription_id, action_type, usage, product_name, interaction_at)
+			VALUES ($1, $2, $3, $4, NOW())`)
 	if es != nil {
 		panic(es.Error())
 	}
@@ -354,7 +354,7 @@ func (db Database) LogUserAction(accountAction models.SubscriptionAccountAction)
 	if es != nil {
 		panic(es.Error())
 	}
-	_, er := stmt.Exec(subIdUUID, accountAction.ActionType, accountAction.UsageAmount, accountAction.Product, accountAction.UserId)
+	_, er := stmt.Exec(subIdUUID, accountAction.ActionType, accountAction.UsageAmount, accountAction.Product)
 	if er != nil {
 		panic(er.Error())
 	}
@@ -379,18 +379,11 @@ func (db Database) CountInteractionsForSubscription(userAction models.Subscripti
 			FROM subscription_account_log 
 			WHERE subscription_id = $1 AND product_name = $2 `
 
-	var userInteractionsSql = "SELECT COUNT (DISTINCT user_id) as userInteractions FROM subscription_account_log WHERE subscription_id = $1 and product_name = $2 "
-
 	var countUserInteractions int
 	if !lastProcessedTime.IsZero() {
 
-		var query string
 		interactionTimeSql := "AND interaction_at > $3"
-		if userAction.UserId != "" && userAction.ActionType == UserLimit {
-			query = userInteractionsSql + interactionTimeSql
-		} else {
-			query = countInteractionsSql + interactionTimeSql
-		}
+		var query = countInteractionsSql + interactionTimeSql
 
 		if err := db.Conn.QueryRow(query,
 			userAction.SubscriptionId, userAction.Product, lastProcessedTime).Scan(&countUserInteractions); err != nil {
@@ -399,14 +392,7 @@ func (db Database) CountInteractionsForSubscription(userAction models.Subscripti
 			}
 		}
 	} else {
-		var query string
-		if userAction.UserId != "" && userAction.ActionType == UserLimit {
-			query = userInteractionsSql
-		} else {
-			query = countInteractionsSql
-		}
-
-		if err := db.Conn.QueryRow(query,
+		if err := db.Conn.QueryRow(countInteractionsSql,
 			userAction.SubscriptionId, userAction.Product).Scan(&countUserInteractions); err != nil {
 			if err == sql.ErrNoRows {
 				return countUserInteractions, fmt.Errorf("unknown count on user: %s", userAction.SubscriptionId)

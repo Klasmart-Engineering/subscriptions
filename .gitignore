@@ -16,6 +16,7 @@ postgres-integration-data
 *.dylib
 
 src/subscriptions
+src/src
 response.json
 # Test binary, built with `go test -c`
 *.test
