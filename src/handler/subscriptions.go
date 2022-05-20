@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"github.com/go-chi/render"
+	"log"
 	"net/http"
 	"strconv"
 	"subscriptions/models"
@@ -37,7 +38,8 @@ func EvaluateSubscription(subscriptionToEvaluate models.SubscriptionEvaluation) 
 	}
 	var evaluatedSubscription = models.EvaluatedSubscription{SubscriptionId: subscriptionToEvaluate.ID, Products: prods, DateFromEpoch: subscriptionToEvaluate.LastProcessedTime, DateToEpoch: strconv.FormatInt(now.Unix(), 10)}
 
-	PublishSubscriptionUsage(evaluatedSubscription, cntxt)
+	//TODO revert this back to putting on a topic
+	log.Println(evaluatedSubscription)
 	dbInstance.UpdateLastProcessed(&subscriptionToEvaluate)
 }
 

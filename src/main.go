@@ -45,9 +45,6 @@ func startServer(ctx context.Context) {
 	cfg := &config.Config{
 		Server: config.Server{Port: addr, Development: true},
 		Logger: Logger,
-		Kafka: config.Kafka{
-			Brokers: instrument.GetBrokers(),
-		},
 	}
 
 	database, err := db.Initialize(
@@ -63,8 +60,6 @@ func startServer(ctx context.Context) {
 
 	newRelic, _ := instrument.GetNewRelic("Subscription Service", logger)
 	httpHandler := handler.NewHandler(database, newRelic.App, cfg, ctx)
-
-	go handler.StartConsumers(ctx)
 
 	server := &http.Server{
 		Handler: httpHandler,
