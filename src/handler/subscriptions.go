@@ -98,6 +98,28 @@ func logAccountAction(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func addProduct(w http.ResponseWriter, r *http.Request) {
+	var product models.AddProduct
+	json.NewDecoder(r.Body).Decode(&product)
+
+	err := AddProductToSubscription(product)
+
+	if err != nil {
+		render.Render(w, r, ErrorRenderer(err))
+	} else {
+		response := models.ProductResponse{Details: "Successfully added product"}
+
+		if err := render.Render(w, r, &response); err != nil {
+			render.Render(w, r, ErrorRenderer(err))
+		}
+	}
+}
+
+func AddProductToSubscription(product models.AddProduct) error {
+	err := dbInstance.AddProductToSubscription(product)
+	return err
+}
+
 func LogAction(accountAction models.SubscriptionAccountAction) models.LogResponse {
 
 	dbInstance.LogUserAction(accountAction)

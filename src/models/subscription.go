@@ -55,6 +55,10 @@ func (*SubscriptionType) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+func (*ProductResponse) Render(w http.ResponseWriter, r *http.Request) error {
+	return nil
+}
+
 type SubscriptionAction struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
@@ -100,6 +104,18 @@ type SubscriptionAccountAction struct {
 	UsageAmount    int    `json:"usageAmount"`
 	Product        string `json:"product"`
 	UserId         string `json:"userId"`
+}
+
+type AddProduct struct {
+	SubscriptionId string `json:"SubscriptionId"`
+	Product        string `json:"product"`
+	Type           string `json:"type"`
+	Threshold      int    `json:"threshold"`
+	Action         string `json:"action"`
+}
+
+type ProductResponse struct {
+	Details string `json:"details"`
 }
 
 type SubscriptionChange struct {
