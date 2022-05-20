@@ -72,7 +72,6 @@ CREATE TABLE if not exists subscription_account_log
     usage           int                                                NOT NULL,
     product_name    varchar                                            NOT NULL,
     interaction_at  timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    user_id         varchar                                            NULL,
     FOREIGN KEY (subscription_id) REFERENCES subscription_account (id),
     PRIMARY KEY (subscription_id, action_type, product_name, interaction_at)
 );
