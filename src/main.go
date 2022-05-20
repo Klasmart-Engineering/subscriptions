@@ -9,11 +9,11 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"subscriptions/config"
-	db "subscriptions/database"
-	"subscriptions/handler"
-	"subscriptions/instrument"
-	logging "subscriptions/log"
+	"subscriptions/src/config"
+	db "subscriptions/src/database"
+	"subscriptions/src/handler"
+	"subscriptions/src/instrument"
+	logging "subscriptions/src/log"
 	"syscall"
 	"time"
 )
@@ -25,6 +25,7 @@ func main() {
 }
 
 func startServer(ctx context.Context) {
+	log.Println("Starting API server")
 
 	addr := ":8080"
 	listener, err := net.Listen("tcp", addr)

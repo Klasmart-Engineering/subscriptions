@@ -23,6 +23,7 @@ func Initialize(username, password, database, host string) (Database, error) {
 	db := Database{}
 
 	connect := func() error {
+		log.Println("Attempting to connect to database")
 		dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 			host, PORT, username, password, database)
 		conn, err := sql.Open("postgres", dsn)

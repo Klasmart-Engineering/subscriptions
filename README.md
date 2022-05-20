@@ -42,7 +42,9 @@
 
 ##### To run unit tests
 
-TODO
+```
+  go test -v ./test/unit/...
+```
 
 ##### To run integration tests
 

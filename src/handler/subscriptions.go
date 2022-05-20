@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"subscriptions/models"
+	"subscriptions/src/models"
 	"time"
 )
 
