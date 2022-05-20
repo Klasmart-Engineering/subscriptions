@@ -53,7 +53,7 @@ services:
       - '1234:5432'
     volumes:
       - ./postgres-data:/var/lib/postgresql/data
-      - ./environment/local/database/init-new.sql:/docker-entrypoint-initdb.d/create_tables.sql
+      - ./environment/local/database/init.sql:/docker-entrypoint-initdb.d/create_tables.sql
     env_file:
       - environment/local/.env
     networks:
