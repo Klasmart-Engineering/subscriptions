@@ -9,6 +9,10 @@ import (
 	"time"
 )
 
+const (
+	UserLimit = "UserLogin"
+)
+
 func (db Database) Healthcheck() (bool, error) {
 	var up int
 	if err := db.Conn.QueryRow(`
@@ -374,23 +378,42 @@ func (db Database) CountInteractionsForSubscription(userAction models.Subscripti
 			SELECT COUNT(1) AS user_interactions 
 			FROM subscription_account_log 
 			WHERE subscription_id = $1 AND product_name = $2 `
+
+	var userInteractionsSql = " COUNT (DISTINCT user_id) as userInteractions FROM subscription_account_log WHERE subscription_id = $1 and product_name = $2 "
+
 	var countUserInteractions int
 	if !lastProcessedTime.IsZero() {
-		countInteractionsSql = countInteractionsSql + "AND interaction_at > $3"
-		if err := db.Conn.QueryRow(countInteractionsSql,
+
+		var query string
+		interactionTimeSql := "AND interaction_at > $3"
+		if userAction.UserId != "" && userAction.ActionType == UserLimit {
+			query = userInteractionsSql + interactionTimeSql
+		} else {
+			query = countInteractionsSql + interactionTimeSql
+		}
+
+		if err := db.Conn.QueryRow(query,
 			userAction.SubscriptionId, userAction.Product, lastProcessedTime).Scan(&countUserInteractions); err != nil {
 			if err == sql.ErrNoRows {
 				return countUserInteractions, fmt.Errorf("unknown count on user: %s", userAction.SubscriptionId)
 			}
 		}
 	} else {
-		if err := db.Conn.QueryRow(countInteractionsSql,
+		var query string
+		if userAction.UserId != "" && userAction.ActionType == UserLimit {
+			query = userInteractionsSql
+		} else {
+			query = countInteractionsSql
+		}
+
+		if err := db.Conn.QueryRow(query,
 			userAction.SubscriptionId, userAction.Product).Scan(&countUserInteractions); err != nil {
 			if err == sql.ErrNoRows {
 				return countUserInteractions, fmt.Errorf("unknown count on user: %s", userAction.SubscriptionId)
 			}
 		}
 	}
+
 	return countUserInteractions, nil
 }
 
