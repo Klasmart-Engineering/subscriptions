@@ -379,7 +379,7 @@ func (db Database) CountInteractionsForSubscription(userAction models.Subscripti
 			FROM subscription_account_log 
 			WHERE subscription_id = $1 AND product_name = $2 `
 
-	var userInteractionsSql = " COUNT (DISTINCT user_id) as userInteractions FROM subscription_account_log WHERE subscription_id = $1 and product_name = $2 "
+	var userInteractionsSql = "SELECT COUNT (DISTINCT user_id) as userInteractions FROM subscription_account_log WHERE subscription_id = $1 and product_name = $2 "
 
 	var countUserInteractions int
 	if !lastProcessedTime.IsZero() {
