@@ -1,9 +1,14 @@
 package helper
 
 import (
+	"database/sql"
+	"fmt"
+	"github.com/cenkalti/backoff/v4"
 	"log"
 	"os"
 	db "subscriptions/src/database"
+	"testing"
+	"time"
 )
 
 var connection *db.Database
@@ -19,6 +24,68 @@ func readFile(file string) string {
 }
 
 func ResetDatabase() {
+	initIfNeeded()
+
+	execOrPanic(dropStatements)
+	execOrPanic(initStatements)
+}
+
+func RunTestSetupScript(fileName string) {
+	initIfNeeded()
+
+	execOrPanic(readFile("./test-sql/" + fileName))
+}
+
+func GetDatabaseConnection() *db.Database {
+	initIfNeeded()
+
+	return connection
+}
+
+func ExactlyOneRowMatches(query string) error {
+	var rowCount int
+	if err := GetDatabaseConnection().Conn.QueryRow(query).Scan(&rowCount); err != nil {
+		if err == sql.ErrNoRows {
+			panic(err)
+		}
+	}
+
+	if rowCount != 1 {
+		return fmt.Errorf("query \"%s\" returned %d rows instead of 1", query, rowCount)
+	}
+
+	return nil
+}
+
+func AssertExactlyOneRowMatchesWithBackoff(t *testing.T, query string) {
+	var check = func() error {
+		return ExactlyOneRowMatches(query)
+	}
+
+	err := backoff.Retry(check, &backoff.ExponentialBackOff{
+		InitialInterval:     100 * time.Millisecond,
+		RandomizationFactor: 0.5,
+		Multiplier:          1.2,
+		MaxInterval:         1 * time.Second,
+		MaxElapsedTime:      5 * time.Second,
+		Stop:                -1,
+		Clock:               backoff.SystemClock,
+	})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func execOrPanic(statement string) {
+	_, err := connection.Conn.Exec(statement)
+
+	if err != nil {
+		log.Panicf("Could not execute database statement %s: %s", statement, err)
+	}
+}
+
+func initIfNeeded() {
 	if connection == nil {
 		conn, err := db.Initialize(
 			"postgres",
@@ -32,20 +99,5 @@ func ResetDatabase() {
 		}
 
 		connection = &conn
-	}
-
-	execOrPanic(dropStatements)
-	execOrPanic(initStatements)
-}
-
-func RunTestSql(fileName string) {
-	execOrPanic(readFile("./test-sql/" + fileName))
-}
-
-func execOrPanic(statement string) {
-	_, err := connection.Conn.Exec(statement)
-
-	if err != nil {
-		log.Panicf("Could not execute database statement %s: %s", statement, err)
 	}
 }
