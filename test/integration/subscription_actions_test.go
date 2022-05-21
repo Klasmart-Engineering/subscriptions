@@ -1,4 +1,4 @@
-package subscription_types_test
+package integration_test
 
 import (
 	"encoding/json"

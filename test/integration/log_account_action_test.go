@@ -1,4 +1,4 @@
-package subscription_types_test
+package integration_test
 
 import (
 	"bytes"
@@ -23,7 +23,7 @@ func TestLogAccountActionInvalidBodyReturns400(t *testing.T) {
 
 func TestInactiveSubscriptionReturnsUnsuccessfulResponse(t *testing.T) {
 	helper.ResetDatabase()
-	helper.RunTestSql("inactive-subscription.sql")
+	helper.RunTestSetupScript("inactive-subscription.sql")
 
 	var request = models.SubscriptionAccountAction{
 		SubscriptionId:       "2f797c16-053e-41ab-b40d-24356480e61e",
@@ -58,7 +58,7 @@ func TestInactiveSubscriptionReturnsUnsuccessfulResponse(t *testing.T) {
 
 func TestDisabledSubscriptionReturnsUnsuccessfulResponse(t *testing.T) {
 	helper.ResetDatabase()
-	helper.RunTestSql("disabled-subscription.sql")
+	helper.RunTestSetupScript("disabled-subscription.sql")
 
 	var request = models.SubscriptionAccountAction{
 		SubscriptionId:       "2f797c16-053e-41ab-b40d-24356480e61e",
@@ -93,7 +93,7 @@ func TestDisabledSubscriptionReturnsUnsuccessfulResponse(t *testing.T) {
 
 func TestActiveSubscriptionOverThresholdReturnsBlockedResponse(t *testing.T) {
 	helper.ResetDatabase()
-	helper.RunTestSql("over-threshold-subscription.sql")
+	helper.RunTestSetupScript("over-threshold-subscription.sql")
 
 	var request = models.SubscriptionAccountAction{
 		SubscriptionId:       "2f797c16-053e-41ab-b40d-24356480e61e",
@@ -128,7 +128,7 @@ func TestActiveSubscriptionOverThresholdReturnsBlockedResponse(t *testing.T) {
 
 func TestActiveSubscriptionBelowThresholdReturnsWithinLimitResponse(t *testing.T) {
 	helper.ResetDatabase()
-	helper.RunTestSql("within-threshold-subscription.sql")
+	helper.RunTestSetupScript("within-threshold-subscription.sql")
 
 	var request = models.SubscriptionAccountAction{
 		SubscriptionId:       "2f797c16-053e-41ab-b40d-24356480e61e",
