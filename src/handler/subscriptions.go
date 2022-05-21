@@ -134,9 +134,19 @@ func logAccountAction(w http.ResponseWriter, r *http.Request) {
 
 func addProduct(w http.ResponseWriter, r *http.Request) {
 	var product models.AddProduct
-	json.NewDecoder(r.Body).Decode(&product)
+	bytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, http.StatusText(400), 400)
+		return
+	}
 
-	err := AddProductToSubscription(product)
+	err = json.Unmarshal(bytes, &product)
+	if err != nil {
+		http.Error(w, http.StatusText(400), 400)
+		return
+	}
+
+	err = AddProductToSubscription(product)
 
 	if err != nil {
 		render.Render(w, r, ErrorRenderer(err))
