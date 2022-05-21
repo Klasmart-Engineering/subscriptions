@@ -88,6 +88,25 @@ func getAllSubscriptionActions(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func logAccountActions(w http.ResponseWriter, r *http.Request) {
+	var actionList models.SubscriptionAccountActionList
+	bytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, http.StatusText(400), 400)
+		return
+	}
+
+	err = json.Unmarshal(bytes, &actionList)
+	if err != nil {
+		http.Error(w, http.StatusText(400), 400)
+		return
+	}
+
+	go LogActions(actionList)
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Account Actions Processing"))
+}
+
 func logAccountAction(w http.ResponseWriter, r *http.Request) {
 	var accountAction models.SubscriptionAccountAction
 	bytes, err := ioutil.ReadAll(r.Body)
@@ -129,6 +148,14 @@ func addProduct(w http.ResponseWriter, r *http.Request) {
 func AddProductToSubscription(product models.AddProduct) error {
 	err := dbInstance.AddProductToSubscription(product)
 	return err
+}
+
+func LogActions(accountAction models.SubscriptionAccountActionList) {
+
+	for _, action := range accountAction.Actions {
+		logAction := LogAction(action)
+		log.Println(logAction.Details)
+	}
 }
 
 func LogAction(accountAction models.SubscriptionAccountAction) models.LogResponse {
