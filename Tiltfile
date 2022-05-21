@@ -8,7 +8,7 @@ docker_build('local-go-image', '.',
     dockerfile='Dockerfile-local',
     )
 
-helm_resource('krakend', '../microgateway-base-helm/charts')
+helm_resource('krakend', '../microgateway-base-helm/charts', flags = ['--set', 'global.imagePullSecrets[0].name=dockerconfigjson-github-com'])
 
 docker_build('local-postgres-image', '.',
     dockerfile='Dockerfile-postgres')
