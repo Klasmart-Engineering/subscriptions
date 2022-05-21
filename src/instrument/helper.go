@@ -3,7 +3,6 @@ package instrument
 import (
 	"fmt"
 	"os"
-	"strings"
 )
 
 func MustGetEnv(key string) string {
@@ -11,8 +10,4 @@ func MustGetEnv(key string) string {
 		return val
 	}
 	panic(fmt.Sprintf("environment variable %s unset", key))
-}
-
-func GetBrokers() []string {
-	return strings.Split(MustGetEnv("BROKERS"), ",")
 }
