@@ -98,6 +98,10 @@ func (*LogResponse) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+type SubscriptionAccountActionList struct {
+	Actions []SubscriptionAccountAction `json:"actions"`
+}
+
 type SubscriptionAccountAction struct {
 	SubscriptionId       string `json:"SubscriptionId"`
 	ActionType           string `json:"actionType"`
