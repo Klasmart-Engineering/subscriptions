@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"subscriptions/src/config"
 	db "subscriptions/src/database"
 	"subscriptions/src/handler"
@@ -25,43 +26,28 @@ func main() {
 }
 
 func startServer(ctx context.Context) {
-	log.Println("Starting API server")
+	config.LoadProfile(instrument.MustGetEnvOrFlag("profile"))
+	activeConfig := config.GetConfig()
 
-	addr := ":8080"
-	listener, err := net.Listen("tcp", addr)
+	log.Printf("Starting API server with profile: %s", config.GetProfileName())
+
+	listener, err := net.Listen("tcp", ":"+strconv.Itoa(activeConfig.Server.Port))
 	if err != nil {
 		log.Fatalf("Error occurred: %s", err.Error())
 	}
 
-	l, _ := zap.NewDevelopment()
-	logger := logging.Wrap(l)
-
-	Logger := config.Logger{
-		DisableCaller:     false,
-		DisableStacktrace: false,
-		Encoding:          "json",
-		Level:             "info",
-	}
-
-	cfg := &config.Config{
-		Server: config.Server{Port: addr, Development: true},
-		Logger: Logger,
-	}
-
-	database, err := db.Initialize(
-		os.Getenv("POSTGRES_USER"),
-		os.Getenv("POSTGRES_PASSWORD"),
-		os.Getenv("POSTGRES_DB"),
-		os.Getenv("POSTGRES_HOST"),
-		5432)
-
-	if err != nil {
-		log.Fatalf("Could not set up database: %v", err)
-	}
+	database := setupDatabase()
 	defer database.Conn.Close()
 
-	newRelic, _ := instrument.GetNewRelic("Subscription Service", logger)
-	httpHandler := handler.NewHandler(database, newRelic.App, cfg, ctx)
+	newRelic, _ := instrument.GetNewRelic("Subscription Service",
+		getLogger(),
+		activeConfig.NewRelicConfig.LicenseKey,
+		activeConfig.NewRelicConfig.Enabled,
+		activeConfig.NewRelicConfig.TracerEnabled,
+		activeConfig.NewRelicConfig.SpanEventEnabled,
+		activeConfig.NewRelicConfig.ErrorCollectorEnabled)
+
+	httpHandler := handler.NewHandler(database, newRelic.App, ctx)
 
 	server := &http.Server{
 		Handler: httpHandler,
@@ -70,12 +56,13 @@ func startServer(ctx context.Context) {
 		server.Serve(listener)
 	}()
 	defer Stop(server)
-	log.Printf("Started server on %s", addr)
+	log.Printf("Started server on %d", activeConfig.Server.Port)
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
 	log.Println(fmt.Sprint(<-ch))
 	log.Println("Stopping API server.")
 }
+
 func Stop(server *http.Server) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -83,4 +70,32 @@ func Stop(server *http.Server) {
 		log.Printf("Could not shut down server correctly: %v\n", err)
 		os.Exit(1)
 	}
+}
+
+func getLogger() *logging.ZapLogger {
+	var l *zap.Logger
+	if config.GetConfig().Logging.DevelopmentLogger {
+		l, _ = zap.NewDevelopment()
+	} else {
+		l, _ = zap.NewProduction()
+	}
+
+	return logging.Wrap(l)
+}
+
+func setupDatabase() db.Database {
+	activeConfig := config.GetConfig()
+
+	database, err := db.Initialize(
+		activeConfig.Database.User,
+		activeConfig.Database.Password,
+		activeConfig.Database.DatabaseName,
+		activeConfig.Database.Host,
+		activeConfig.Database.Port)
+
+	if err != nil {
+		log.Fatalf("Could not set up database: %v", err)
+	}
+
+	return database
 }

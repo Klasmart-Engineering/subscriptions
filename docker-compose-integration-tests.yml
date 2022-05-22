@@ -8,8 +8,8 @@ services:
       - "8020:8080"
     depends_on:
       - postgres
-    env_file:
-      - ./environment/integration/.env
+    environment:
+      - PROFILE=integration-tests-docker
     restart: "no"
   postgres:
     image: postgres:14.1-alpine

@@ -16,8 +16,9 @@ FROM debian:buster
 
 EXPOSE 8080 40000
 
-WORKDIR /
+WORKDIR /app
 COPY --from=build-env /go/bin/dlv /
-COPY --from=build-env /subscriptions /
+COPY --from=build-env /subscriptions /app/subscriptions
+COPY --from=build-env /dockerdev/profiles/local-docker.json /app/profiles/local-docker.json
 
-CMD ["/dlv", "--listen=:40000", "--headless=true", "--api-version=2", "--accept-multiclient", "exec", "/subscriptions"]
+CMD ["/dlv", "--listen=:40000", "--headless=true", "--api-version=2", "--accept-multiclient", "exec", "./subscriptions"]
