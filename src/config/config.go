@@ -1,20 +1,131 @@
 package config
 
-type Config struct {
-	Logger Logger
-	Server Server
+import (
+	"encoding/json"
+	"fmt"
+	"log"
+	"os"
+	"reflect"
+	"strings"
+	"subscriptions/src/instrument"
+)
+
+var activeConfig *config
+var activeProfile *string
+
+type config struct {
+	Server         serverConfig
+	Logging        loggingConfig
+	Database       databaseConfig
+	NewRelicConfig newRelicConfig
 }
 
-// Server config
-type Server struct {
-	Port        string
-	Development bool
+type serverConfig struct {
+	Port int
 }
 
-// Logger config
-type Logger struct {
-	DisableCaller     bool
-	DisableStacktrace bool
-	Encoding          string
-	Level             string
+type loggingConfig struct {
+	DevelopmentLogger bool
+}
+
+type newRelicConfig struct {
+	Enabled               bool
+	LicenseKey            string
+	TracerEnabled         bool
+	SpanEventEnabled      bool
+	ErrorCollectorEnabled bool
+}
+
+type databaseConfig struct {
+	Host         string
+	Port         int
+	User         string
+	Password     string
+	DatabaseName string
+}
+
+func LoadProfile(name string) {
+	LoadProfileFromFile(fmt.Sprintf("./profiles/%s.json", name), name)
+}
+
+func LoadProfileFromFile(file string, name string) {
+	var contents = readFile(file)
+
+	err := json.NewDecoder(strings.NewReader(contents)).Decode(&activeConfig)
+	if err != nil {
+		log.Panicf("Could not deserialise config file %s", err)
+	}
+
+	activeProfile = &name
+
+	replaceFromEnvironmentVariables("", activeConfig)
+}
+
+func replaceFromEnvironmentVariables(path string, thing interface{}) {
+	configValue := reflect.Indirect(reflect.ValueOf(thing))
+	configType := reflect.Indirect(configValue).Type()
+
+	i := 0
+	for i < configType.NumField() {
+		fieldName := strings.ToUpper(configType.Field(i).Name)
+		if path != "" {
+			fieldName = path + "_" + fieldName
+		}
+
+		fieldType := configType.Field(i).Type
+
+		if fieldType.Kind() == reflect.Struct {
+			replaceFromEnvironmentVariables(fieldName, configValue.Field(i).Addr().Interface())
+		}
+
+		if fieldType.Kind() == reflect.String {
+			value := instrument.GetStringEnv(fieldName)
+			if value != nil {
+				log.Printf("Overriding config %s from environment variables", fieldName)
+				configValue.Field(i).SetString(*value)
+			}
+		}
+
+		if fieldType.Kind() == reflect.Int {
+			value := instrument.GetIntEnv(fieldName)
+			if value != nil {
+				log.Printf("Overriding config %s from environment variables", fieldName)
+				configValue.Field(i).SetInt(int64(*value))
+			}
+		}
+
+		if fieldType.Kind() == reflect.Bool {
+			value := instrument.GetBoolEnv(fieldName)
+			if value != nil {
+				log.Printf("Overriding config %s from environment variables", fieldName)
+				configValue.Field(i).SetBool(*value)
+			}
+		}
+
+		i++
+	}
+}
+
+func GetConfig() *config {
+	if activeConfig == nil {
+		log.Panicf("Attempt to get config before any profile loaded")
+	}
+
+	return activeConfig
+}
+
+func GetProfileName() string {
+	if activeProfile == nil {
+		log.Panicf("Attempt to get profile name before any profile loaded")
+	}
+
+	return *activeProfile
+}
+
+func readFile(file string) string {
+	content, err := os.ReadFile(file)
+	if err != nil {
+		log.Panicf("Could not read file %s", file)
+	}
+	return string(content)
 }

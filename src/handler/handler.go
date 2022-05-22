@@ -9,18 +9,15 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
 	"net/http"
-	conf "subscriptions/src/config"
 	db "subscriptions/src/database"
 )
 
 var dbInstance db.Database
-var config conf.Config
 var cntxt context.Context
 
-func NewHandler(db db.Database, newRelicApp newrelic.Application, cfg *conf.Config, ctx context.Context) http.Handler {
+func NewHandler(db db.Database, newRelicApp newrelic.Application, ctx context.Context) http.Handler {
 	router := chi.NewRouter()
 	dbInstance = db
-	config = *cfg
 	cntxt = ctx
 	router.Use(recovery)
 	router.MethodNotAllowed(methodNotAllowedHandler)
