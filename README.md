@@ -20,6 +20,43 @@
   
 ```
 
+ - Go to https://github.com/settings/tokens.
+ - Click "Generate new token"
+ - Name it "Container Registry", select read:packages from the list, click "Generate Token"
+ - Copy the key from the next page
+
+```
+echo "github-username:the-token" | base64
+```
+
+Copy the output
+
+```
+echo '{"auths":{"ghcr.io":{"auth":"paste-output-here"}}}' | base64
+```
+
+Create a file named imagepull.yaml in your home directory:
+
+```
+kind: Secret
+type: kubernetes.io/dockerconfigjson
+apiVersion: v1
+metadata:
+  name: dockerconfigjson-github-com
+  labels:
+    app: app-name
+data:
+  .dockerconfigjson: output-of-last-command-here
+```
+
+Now add the secret to your k3d cluster, start it if it's not already running (see below) then run
+
+```
+kubectl apply -f imagepull.yaml
+```
+
+Go back to https://github.com/settings/tokens, click on the "Configure SSO" dropdown and click "Authorize" next to KL-Engineering.
+
 ##### To run locally in K3d:
 
 ```
