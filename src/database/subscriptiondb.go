@@ -144,15 +144,19 @@ func (db Database) CreateSubscription() (uuid uuid2.UUID, err error) {
 	return subscriptionId, err
 }
 
-func (db Database) UpdateSubscriptionStatus(subscriptionId int, active int) {
+func (db Database) UpdateSubscriptionStatus(subscriptionId string, active int) error {
 
 	sqlStatement := `
 			UPDATE subscription_account
 			 SET state = $1
-			WHERE id = $1;`
+			WHERE id = $2;`
 
-	db.Conn.Exec(sqlStatement, &active, &subscriptionId)
+	_, err := db.Conn.Exec(sqlStatement, &active, &subscriptionId)
+	if err != nil {
+		return err
+	}
 
+	return nil
 }
 
 func (db Database) UsageOfSubscription(subscriptionEvaluation models.SubscriptionEvaluation) (map[models.SubscriptionEvaluationProduct]int, error) {
