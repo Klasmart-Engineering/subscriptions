@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
 	"io/ioutil"
 	"log"
@@ -85,6 +86,22 @@ func getAllSubscriptionActions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := render.Render(w, r, subscriptionActions); err != nil {
+		render.Render(w, r, ErrorRenderer(err))
+	}
+}
+
+func deactivateSubscription(w http.ResponseWriter, r *http.Request) {
+	subscriptionId := chi.URLParam(r, "id")
+	var inactiveState = 2 //Inactive
+	err := dbInstance.UpdateSubscriptionStatus(subscriptionId, inactiveState)
+
+	if err != nil {
+		render.Render(w, r, ServerErrorRenderer(err))
+		return
+	}
+
+	response := models.GenericResponse{Details: "Subscription deactivated."}
+	if err := render.Render(w, r, &response); err != nil {
 		render.Render(w, r, ErrorRenderer(err))
 	}
 }

@@ -30,6 +30,7 @@ func NewHandler(db db.Database, newRelicApp newrelic.Application, ctx context.Co
 	router.Post(newrelic.WrapHandleFunc(newRelicApp, "/log-actions", logAccountActions))
 	router.Post(newrelic.WrapHandleFunc(newRelicApp, "/add-product", addProduct))
 	router.Post(newrelic.WrapHandleFunc(newRelicApp, "/create-subscription", createSubscription))
+	router.Post(newrelic.WrapHandleFunc(newRelicApp, "/deactivate/{id}", deactivateSubscription))
 	router.Post(newrelic.WrapHandleFunc(newRelicApp, "/evaluate-subscriptions", evaluateSubscriptionsUsage))
 
 	router.Handle("/metrics", promhttp.Handler())

@@ -63,6 +63,10 @@ func (*SubscriptionResponse) Render(w http.ResponseWriter, r *http.Request) erro
 	return nil
 }
 
+func (*GenericResponse) Render(w http.ResponseWriter, r *http.Request) error {
+	return nil
+}
+
 type SubscriptionAction struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
@@ -123,6 +127,10 @@ type AddProduct struct {
 }
 
 type ProductResponse struct {
+	Details string `json:"details"`
+}
+
+type GenericResponse struct {
 	Details string `json:"details"`
 }
 
