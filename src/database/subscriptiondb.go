@@ -4,7 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	uuid2 "github.com/google/uuid"
-	"log"
+	"go.uber.org/zap"
+	logging "subscriptions/src/log"
 	"subscriptions/src/models"
 	"time"
 )
@@ -113,7 +114,7 @@ func (db Database) IsSubscriptionActive(subscriptionId string) (bool, error) {
 	return state == "Active", nil
 }
 
-func (db Database) UpdateLastProcessed(subscription *models.SubscriptionEvaluation) {
+func (db Database) UpdateLastProcessed(subscriptionsContext *logging.SubscriptionsContext, subscription *models.SubscriptionEvaluation) {
 
 	sqlStatement := `
 						UPDATE subscription_account
@@ -122,12 +123,13 @@ func (db Database) UpdateLastProcessed(subscription *models.SubscriptionEvaluati
 
 	_, err := db.Conn.Exec(sqlStatement, subscription.ID)
 	if err != nil {
-		log.Panic(fmt.Printf("Unable to update the last processed time of subscription id %d\n", subscription.ID))
+		subscriptionsContext.Error("Unable to update the last processed time of subscription id",
+			zap.String("subscription", subscription.ID))
 	}
 
 }
 
-func (db Database) CreateSubscription() (uuid uuid2.UUID, err error) {
+func (db Database) CreateSubscription(subscriptionsContext *logging.SubscriptionsContext) (uuid uuid2.UUID, err error) {
 	var minutes = 43200 //TODO how do we define before adding a product
 	var state = 1       // Active
 
@@ -138,7 +140,7 @@ func (db Database) CreateSubscription() (uuid uuid2.UUID, err error) {
 
 	err = db.Conn.QueryRow(sqlStatement, minutes, state).Scan(&subscriptionId)
 	if err != nil {
-		log.Panic("Unable to create subscription", err)
+		subscriptionsContext.Panic("Unable to create subscription", zap.Error(err))
 	}
 
 	return subscriptionId, err

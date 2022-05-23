@@ -6,7 +6,7 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	"log"
 	"os"
-	db "subscriptions/src/database"
+	db "subscriptions/test/integration/db"
 	"testing"
 	"time"
 )

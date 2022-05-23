@@ -2,8 +2,6 @@ package log
 
 import (
 	"context"
-	"fmt"
-
 	newrelic "github.com/newrelic/go-agent"
 	"go.uber.org/zap"
 )
@@ -17,15 +15,21 @@ const (
 	hostnameKey   = "hostname"
 )
 
-type ZapLogger struct {
-	zap *zap.Logger
+var GlobalContext *SubscriptionsContext
+
+type SubscriptionsContext struct {
+	context.Context
+	*zap.Logger
 }
 
-func (l *ZapLogger) WithCtxValue(ctx context.Context) *zap.Logger {
-	return l.zap.With(l.keyAndValueFromContext(ctx)...)
+func NewSubscriptionsContext(logger *zap.Logger, context context.Context) *SubscriptionsContext {
+	return &SubscriptionsContext{
+		Context: context,
+		Logger:  logger.With(keyAndValueFromContext(context)...),
+	}
 }
 
-func (l *ZapLogger) keyAndValueFromContext(ctx context.Context) []zap.Field {
+func keyAndValueFromContext(ctx context.Context) []zap.Field {
 	if txn := newrelic.FromContext(ctx); nil != txn {
 		metadata := txn.GetLinkingMetadata()
 		return []zap.Field{
@@ -38,45 +42,4 @@ func (l *ZapLogger) keyAndValueFromContext(ctx context.Context) []zap.Field {
 		}
 	}
 	return nil
-
-}
-
-func (l *ZapLogger) Named(name string) *zap.Logger {
-	return l.zap.Named(name)
-}
-
-func Wrap(l *zap.Logger) *ZapLogger {
-	return &ZapLogger{zap: l}
-}
-
-func (l *ZapLogger) Error(ctx context.Context, i ...interface{}) {
-	l.WithCtxValue(ctx).Error(fmt.Sprint(i...))
-}
-
-func (l *ZapLogger) Errorf(ctx context.Context, s string, i ...interface{}) {
-	l.WithCtxValue(ctx).Error(fmt.Sprintf(s, i...))
-}
-
-func (l *ZapLogger) Fatal(ctx context.Context, i ...interface{}) {
-	l.WithCtxValue(ctx).Error(fmt.Sprint(i...))
-}
-
-func (l *ZapLogger) Fatalf(ctx context.Context, s string, i ...interface{}) {
-	l.WithCtxValue(ctx).Error(fmt.Sprintf(s, i...))
-}
-
-func (l *ZapLogger) Info(ctx context.Context, i ...interface{}) {
-	l.WithCtxValue(ctx).Info(fmt.Sprint(i...))
-}
-
-func (l *ZapLogger) Infof(ctx context.Context, s string, i ...interface{}) {
-	l.WithCtxValue(ctx).Error(fmt.Sprintf(s, i...))
-}
-
-func (l *ZapLogger) Warn(i ...interface{}) {
-	l.zap.Warn(fmt.Sprint(i...))
-}
-
-func (l *ZapLogger) Warnf(s string, i ...interface{}) {
-	l.zap.Warn(fmt.Sprintf(s, i...))
 }
