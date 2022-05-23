@@ -1,0 +1,22 @@
+{
+  "Server": {
+    "Port": 1234
+  },
+  "Database": {
+    "Host": "host",
+    "Port": 6789,
+    "User": "user",
+    "Password": "password",
+    "DatabaseName": "databaseName"
+  },
+  "Logging": {
+    "DevelopmentLogger": true
+  },
+  "NewRelicConfig": {
+    "Enabled": false,
+    "LicenseKey": "licenseKey",
+    "TracerEnabled": false,
+    "SpanEventEnabled": false,
+    "ErrorCollectorEnabled": false
+  }
+}

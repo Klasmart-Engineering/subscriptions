@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/go-chi/render"
 	"io/ioutil"
 	"log"
@@ -102,7 +103,10 @@ func logAccountActions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	go LogActions(actionList)
+	for _, action := range actionList.Actions {
+		go logActionWithRecover(action)
+	}
+
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Account Actions Processing"))
 }
@@ -130,9 +134,19 @@ func logAccountAction(w http.ResponseWriter, r *http.Request) {
 
 func addProduct(w http.ResponseWriter, r *http.Request) {
 	var product models.AddProduct
-	json.NewDecoder(r.Body).Decode(&product)
+	bytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, http.StatusText(400), 400)
+		return
+	}
 
-	err := AddProductToSubscription(product)
+	err = json.Unmarshal(bytes, &product)
+	if err != nil {
+		http.Error(w, http.StatusText(400), 400)
+		return
+	}
+
+	err = AddProductToSubscription(product)
 
 	if err != nil {
 		render.Render(w, r, ErrorRenderer(err))
@@ -164,12 +178,15 @@ func AddProductToSubscription(product models.AddProduct) error {
 	return err
 }
 
-func LogActions(accountAction models.SubscriptionAccountActionList) {
+func logActionWithRecover(action models.SubscriptionAccountAction) {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Something went wrong calling logActionWithRecoverer: ", r)
+		}
+	}()
 
-	for _, action := range accountAction.Actions {
-		logAction := LogAction(action)
-		log.Println(logAction.Details)
-	}
+	logAction := LogAction(action)
+	log.Println(logAction.Details)
 }
 
 func LogAction(accountAction models.SubscriptionAccountAction) models.LogResponse {

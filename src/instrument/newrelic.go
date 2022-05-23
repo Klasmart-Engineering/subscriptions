@@ -1,11 +1,9 @@
 package instrument
 
 import (
-	"strconv"
-	"subscriptions/src/log"
-
 	newrelic "github.com/newrelic/go-agent"
 	"github.com/newrelic/go-agent/_integrations/nrzap"
+	"subscriptions/src/log"
 )
 
 type NewRelic struct {
@@ -14,22 +12,12 @@ type NewRelic struct {
 	App         newrelic.Application
 }
 
-func GetNewRelic(serviceName string, logger *log.ZapLogger) (*NewRelic, error) {
-	cfg := newrelic.NewConfig(serviceName, MustGetEnv("NEW_RELIC_LICENSE_KEY"))
-	isEnabled := false
-	isDistributedTracerEnabled := false
-	isSpanEventsEnabled := false
-	isErrorCollectorEnabled := false
-
-	isEnabled, _ = strconv.ParseBool(MustGetEnv("NEW_RELIC_ENABLED"))
-	isDistributedTracerEnabled, _ = strconv.ParseBool(MustGetEnv("DISTRIBUTED_TRACER_ENABLED"))
-	isSpanEventsEnabled, _ = strconv.ParseBool(MustGetEnv("SPAN_EVENT_ENABLED"))
-	isErrorCollectorEnabled, _ = strconv.ParseBool(MustGetEnv("ERROR_COLLECTOR_ENABLED"))
-
-	cfg.Enabled = isEnabled
-	cfg.DistributedTracer.Enabled = isDistributedTracerEnabled
-	cfg.SpanEvents.Enabled = isSpanEventsEnabled
-	cfg.ErrorCollector.Enabled = isErrorCollectorEnabled
+func GetNewRelic(serviceName string, logger *log.ZapLogger, licenseKey string, enabled, tracerEnabled, spanEventsEnabled, errorCollectorEnabled bool) (*NewRelic, error) {
+	cfg := newrelic.NewConfig(serviceName, licenseKey)
+	cfg.Enabled = enabled
+	cfg.DistributedTracer.Enabled = tracerEnabled
+	cfg.SpanEvents.Enabled = spanEventsEnabled
+	cfg.ErrorCollector.Enabled = errorCollectorEnabled
 	cfg.Logger = nrzap.Transform(logger.Named("newrelic"))
 
 	app, err := newrelic.NewApplication(cfg)
