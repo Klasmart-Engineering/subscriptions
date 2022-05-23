@@ -159,6 +159,20 @@ func addProduct(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func createSubscription(w http.ResponseWriter, r *http.Request) {
+	subscription, err := dbInstance.CreateSubscription()
+
+	if err != nil {
+		render.Render(w, r, ErrorRenderer(err))
+	} else {
+		response := models.SubscriptionResponse{SubscriptionId: subscription.String()}
+
+		if err := render.Render(w, r, &response); err != nil {
+			render.Render(w, r, ErrorRenderer(err))
+		}
+	}
+}
+
 func AddProductToSubscription(product models.AddProduct) error {
 	err := dbInstance.AddProductToSubscription(product)
 	return err
