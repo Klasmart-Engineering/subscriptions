@@ -53,7 +53,7 @@ func LoadProfileFromFile(file string, name string) {
 
 	err := json.NewDecoder(strings.NewReader(contents)).Decode(&activeConfig)
 	if err != nil {
-		log.Panicf("Could not deserialise config file %s", err)
+		panic(fmt.Sprintf("Could not deserialise config file: %s", err))
 	}
 
 	activeProfile = &name
@@ -81,7 +81,6 @@ func replaceFromEnvironmentVariables(path string, thing interface{}) {
 		if fieldType.Kind() == reflect.String {
 			value := instrument.GetStringEnv(fieldName)
 			if value != nil {
-				log.Printf("Overriding config %s from environment variables", fieldName)
 				configValue.Field(i).SetString(*value)
 			}
 		}
@@ -89,7 +88,6 @@ func replaceFromEnvironmentVariables(path string, thing interface{}) {
 		if fieldType.Kind() == reflect.Int {
 			value := instrument.GetIntEnv(fieldName)
 			if value != nil {
-				log.Printf("Overriding config %s from environment variables", fieldName)
 				configValue.Field(i).SetInt(int64(*value))
 			}
 		}
@@ -97,7 +95,6 @@ func replaceFromEnvironmentVariables(path string, thing interface{}) {
 		if fieldType.Kind() == reflect.Bool {
 			value := instrument.GetBoolEnv(fieldName)
 			if value != nil {
-				log.Printf("Overriding config %s from environment variables", fieldName)
 				configValue.Field(i).SetBool(*value)
 			}
 		}

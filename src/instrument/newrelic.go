@@ -3,7 +3,7 @@ package instrument
 import (
 	newrelic "github.com/newrelic/go-agent"
 	"github.com/newrelic/go-agent/_integrations/nrzap"
-	"subscriptions/src/log"
+	logging "subscriptions/src/log"
 )
 
 type NewRelic struct {
@@ -12,13 +12,13 @@ type NewRelic struct {
 	App         newrelic.Application
 }
 
-func GetNewRelic(serviceName string, logger *log.ZapLogger, licenseKey string, enabled, tracerEnabled, spanEventsEnabled, errorCollectorEnabled bool) (*NewRelic, error) {
+func GetNewRelic(serviceName string, licenseKey string, enabled, tracerEnabled, spanEventsEnabled, errorCollectorEnabled bool) (*NewRelic, error) {
 	cfg := newrelic.NewConfig(serviceName, licenseKey)
 	cfg.Enabled = enabled
 	cfg.DistributedTracer.Enabled = tracerEnabled
 	cfg.SpanEvents.Enabled = spanEventsEnabled
 	cfg.ErrorCollector.Enabled = errorCollectorEnabled
-	cfg.Logger = nrzap.Transform(logger.Named("newrelic"))
+	cfg.Logger = nrzap.Transform(logging.GlobalContext.Named("newrelic"))
 
 	app, err := newrelic.NewApplication(cfg)
 

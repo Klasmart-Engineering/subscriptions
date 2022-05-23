@@ -2,9 +2,7 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"go.uber.org/zap"
-	"log"
 	"net"
 	"net/http"
 	"os"
@@ -29,25 +27,29 @@ func startServer(ctx context.Context) {
 	config.LoadProfile(instrument.MustGetEnvOrFlag("profile"))
 	activeConfig := config.GetConfig()
 
-	log.Printf("Starting API server with profile: %s", config.GetProfileName())
+	subscriptionsContext := getSubscriptionsContext(ctx)
+	logging.GlobalContext = subscriptionsContext
+
+	subscriptionsContext.Info("Starting Server",
+		zap.String("profile", config.GetProfileName()),
+		zap.Int("port", activeConfig.Server.Port))
 
 	listener, err := net.Listen("tcp", ":"+strconv.Itoa(activeConfig.Server.Port))
 	if err != nil {
-		log.Fatalf("Error occurred: %s", err.Error())
+		subscriptionsContext.Fatal("Unable to start Server: %s", zap.Error(err))
 	}
 
 	database := setupDatabase()
 	defer database.Conn.Close()
 
 	newRelic, _ := instrument.GetNewRelic("Subscription Service",
-		getLogger(),
 		activeConfig.NewRelicConfig.LicenseKey,
 		activeConfig.NewRelicConfig.Enabled,
 		activeConfig.NewRelicConfig.TracerEnabled,
 		activeConfig.NewRelicConfig.SpanEventEnabled,
 		activeConfig.NewRelicConfig.ErrorCollectorEnabled)
 
-	httpHandler := handler.NewHandler(database, newRelic.App, ctx)
+	httpHandler := handler.NewHandler(database, newRelic.App, subscriptionsContext)
 
 	server := &http.Server{
 		Handler: httpHandler,
@@ -56,23 +58,23 @@ func startServer(ctx context.Context) {
 		server.Serve(listener)
 	}()
 	defer Stop(server)
-	log.Printf("Started server on %d", activeConfig.Server.Port)
+	subscriptionsContext.Info("Started Server")
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
-	log.Println(fmt.Sprint(<-ch))
-	log.Println("Stopping API server.")
+	<-ch
+	subscriptionsContext.Info("Stopping Server")
 }
 
 func Stop(server *http.Server) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := server.Shutdown(ctx); err != nil {
-		log.Printf("Could not shut down server correctly: %v\n", err)
+		logging.GlobalContext.Error("Could not shut down server correctly", zap.Error(err))
 		os.Exit(1)
 	}
 }
 
-func getLogger() *logging.ZapLogger {
+func getSubscriptionsContext(ctx context.Context) *logging.SubscriptionsContext {
 	var l *zap.Logger
 	if config.GetConfig().Logging.DevelopmentLogger {
 		l, _ = zap.NewDevelopment()
@@ -80,7 +82,7 @@ func getLogger() *logging.ZapLogger {
 		l, _ = zap.NewProduction()
 	}
 
-	return logging.Wrap(l)
+	return logging.NewSubscriptionsContext(l, ctx)
 }
 
 func setupDatabase() db.Database {
@@ -94,7 +96,7 @@ func setupDatabase() db.Database {
 		activeConfig.Database.Port)
 
 	if err != nil {
-		log.Fatalf("Could not set up database: %v", err)
+		logging.GlobalContext.Fatal("Could not set up database", zap.Error(err))
 	}
 
 	return database

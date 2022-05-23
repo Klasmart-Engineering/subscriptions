@@ -5,15 +5,16 @@ import (
 	"fmt"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
+	"go.uber.org/zap"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strconv"
+	logging "subscriptions/src/log"
 	"subscriptions/src/models"
 	"time"
 )
 
-func evaluateSubscriptionsUsage(w http.ResponseWriter, r *http.Request) {
+func evaluateSubscriptionsUsage(subscriptionsContext *logging.SubscriptionsContext, w http.ResponseWriter, r *http.Request) {
 	subscriptions, err := dbInstance.SubscriptionsToProcess()
 	if err != nil {
 		render.Render(w, r, ServerErrorRenderer(err))
@@ -21,13 +22,13 @@ func evaluateSubscriptionsUsage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, subscriptionToEvaluate := range subscriptions.SubscriptionEvaluations {
-		EvaluateSubscription(subscriptionToEvaluate)
+		EvaluateSubscription(subscriptionsContext, subscriptionToEvaluate)
 	}
 
 	// do this as part of a transaction
 }
 
-func EvaluateSubscription(subscriptionToEvaluate models.SubscriptionEvaluation) {
+func EvaluateSubscription(subscriptionsContext *logging.SubscriptionsContext, subscriptionToEvaluate models.SubscriptionEvaluation) {
 	productToProductUsage, err := dbInstance.UsageOfSubscription(subscriptionToEvaluate)
 
 	if err != nil {
@@ -42,8 +43,8 @@ func EvaluateSubscription(subscriptionToEvaluate models.SubscriptionEvaluation) 
 	var evaluatedSubscription = models.EvaluatedSubscription{SubscriptionId: subscriptionToEvaluate.ID, Products: prods, DateFromEpoch: subscriptionToEvaluate.LastProcessedTime, DateToEpoch: strconv.FormatInt(now.Unix(), 10)}
 
 	//TODO revert this back to putting on a topic
-	log.Println(evaluatedSubscription)
-	dbInstance.UpdateLastProcessed(&subscriptionToEvaluate)
+	subscriptionsContext.Info(fmt.Sprint(evaluatedSubscription))
+	dbInstance.UpdateLastProcessed(subscriptionsContext, &subscriptionToEvaluate)
 }
 
 func dbHealthcheck(w http.ResponseWriter, r *http.Request) {
@@ -61,14 +62,13 @@ func dbHealthcheck(w http.ResponseWriter, r *http.Request) {
 }
 
 func applicationLiveness(w http.ResponseWriter, r *http.Request) {
-
 	health := models.Healthcheck{Up: true, Details: "Application up"}
 	if err := render.Render(w, r, &health); err != nil {
 		render.Render(w, r, ErrorRenderer(err))
 	}
 }
 
-func getAllSubscriptionTypes(w http.ResponseWriter, r *http.Request) {
+func getAllSubscriptionTypes(subscriptionsContext *logging.SubscriptionsContext, w http.ResponseWriter, r *http.Request) {
 	subscriptionTypes, err := dbInstance.GetSubscriptionTypes()
 	if err != nil {
 		render.Render(w, r, ServerErrorRenderer(err))
@@ -79,7 +79,7 @@ func getAllSubscriptionTypes(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getAllSubscriptionActions(w http.ResponseWriter, r *http.Request) {
+func getAllSubscriptionActions(subscriptionsContext *logging.SubscriptionsContext, w http.ResponseWriter, r *http.Request) {
 	subscriptionActions, err := dbInstance.GetAllSubscriptionActions()
 	if err != nil {
 		render.Render(w, r, ServerErrorRenderer(err))
@@ -90,23 +90,7 @@ func getAllSubscriptionActions(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func deactivateSubscription(w http.ResponseWriter, r *http.Request) {
-	subscriptionId := chi.URLParam(r, "id")
-	var inactiveState = 2 //Inactive
-	err := dbInstance.UpdateSubscriptionStatus(subscriptionId, inactiveState)
-
-	if err != nil {
-		render.Render(w, r, ServerErrorRenderer(err))
-		return
-	}
-
-	response := models.GenericResponse{Details: "Subscription deactivated."}
-	if err := render.Render(w, r, &response); err != nil {
-		render.Render(w, r, ErrorRenderer(err))
-	}
-}
-
-func logAccountActions(w http.ResponseWriter, r *http.Request) {
+func logAccountActions(subscriptionsContext *logging.SubscriptionsContext, w http.ResponseWriter, r *http.Request) {
 	var actionList models.SubscriptionAccountActionList
 	bytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -121,14 +105,14 @@ func logAccountActions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, action := range actionList.Actions {
-		go logActionWithRecover(action)
+		go logActionWithRecover(subscriptionsContext, action)
 	}
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Account Actions Processing"))
 }
 
-func logAccountAction(w http.ResponseWriter, r *http.Request) {
+func logAccountAction(subscriptionsContext *logging.SubscriptionsContext, w http.ResponseWriter, r *http.Request) {
 	var accountAction models.SubscriptionAccountAction
 	bytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -149,7 +133,7 @@ func logAccountAction(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func addProduct(w http.ResponseWriter, r *http.Request) {
+func addProduct(subscriptionsContext *logging.SubscriptionsContext, w http.ResponseWriter, r *http.Request) {
 	var product models.AddProduct
 	bytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -176,8 +160,8 @@ func addProduct(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func createSubscription(w http.ResponseWriter, r *http.Request) {
-	subscription, err := dbInstance.CreateSubscription()
+func createSubscription(subscriptionsContext *logging.SubscriptionsContext, w http.ResponseWriter, r *http.Request) {
+	subscription, err := dbInstance.CreateSubscription(subscriptionsContext)
 
 	if err != nil {
 		render.Render(w, r, ErrorRenderer(err))
@@ -190,20 +174,36 @@ func createSubscription(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func deactivateSubscription(subscriptionsContext *logging.SubscriptionsContext, w http.ResponseWriter, r *http.Request) {
+	subscriptionId := chi.URLParam(r, "id")
+	var inactiveState = 2 //Inactive
+	err := dbInstance.UpdateSubscriptionStatus(subscriptionId, inactiveState)
+
+	if err != nil {
+		render.Render(w, r, ServerErrorRenderer(err))
+		return
+	}
+
+	response := models.GenericResponse{Details: "Subscription deactivated."}
+	if err := render.Render(w, r, &response); err != nil {
+		render.Render(w, r, ErrorRenderer(err))
+	}
+}
+
 func AddProductToSubscription(product models.AddProduct) error {
 	err := dbInstance.AddProductToSubscription(product)
 	return err
 }
 
-func logActionWithRecover(action models.SubscriptionAccountAction) {
+func logActionWithRecover(subscriptionsContext *logging.SubscriptionsContext, action models.SubscriptionAccountAction) {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Something went wrong calling logActionWithRecoverer: ", r)
+			subscriptionsContext.Error("Something went wrong logging action", zap.Any("error", r))
 		}
 	}()
 
 	logAction := LogAction(action)
-	log.Println(logAction.Details)
+	subscriptionsContext.Info(logAction.Details)
 }
 
 func LogAction(accountAction models.SubscriptionAccountAction) models.LogResponse {

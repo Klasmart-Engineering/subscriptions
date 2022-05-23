@@ -1,41 +1,45 @@
 package handler
 
 import (
-	"context"
 	"encoding/json"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
 	newrelic "github.com/newrelic/go-agent"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"log"
+	"go.uber.org/zap"
 	"net/http"
 	db "subscriptions/src/database"
+	logging "subscriptions/src/log"
 )
 
 var dbInstance db.Database
-var cntxt context.Context
 
-func NewHandler(db db.Database, newRelicApp newrelic.Application, ctx context.Context) http.Handler {
+func NewHandler(db db.Database, newRelicApp newrelic.Application, ctx *logging.SubscriptionsContext) http.Handler {
 	router := chi.NewRouter()
 	dbInstance = db
-	cntxt = ctx
 	router.Use(recovery)
 	router.MethodNotAllowed(methodNotAllowedHandler)
 	router.NotFound(notFoundHandler)
-	router.Get(newrelic.WrapHandleFunc(newRelicApp, "/healthcheck", dbHealthcheck))
-	router.Get(newrelic.WrapHandleFunc(newRelicApp, "/liveness", applicationLiveness))
-	router.Get(newrelic.WrapHandleFunc(newRelicApp, "/subscription-types", getAllSubscriptionTypes))
-	router.Get(newrelic.WrapHandleFunc(newRelicApp, "/subscription-actions", getAllSubscriptionActions))
-	router.Post(newrelic.WrapHandleFunc(newRelicApp, "/log-action", logAccountAction))
-	router.Post(newrelic.WrapHandleFunc(newRelicApp, "/log-actions", logAccountActions))
-	router.Post(newrelic.WrapHandleFunc(newRelicApp, "/add-product", addProduct))
-	router.Post(newrelic.WrapHandleFunc(newRelicApp, "/create-subscription", createSubscription))
-	router.Post(newrelic.WrapHandleFunc(newRelicApp, "/deactivate/{id}", deactivateSubscription))
-	router.Post(newrelic.WrapHandleFunc(newRelicApp, "/evaluate-subscriptions", evaluateSubscriptionsUsage))
-
+	router.Get("/healthcheck", dbHealthcheck)
+	router.Get("/liveness", applicationLiveness)
 	router.Handle("/metrics", promhttp.Handler())
+	router.Get(wrap(newRelicApp, ctx, "/subscription-types", getAllSubscriptionTypes))
+	router.Get(wrap(newRelicApp, ctx, "/subscription-actions", getAllSubscriptionActions))
+	router.Post(wrap(newRelicApp, ctx, "/log-action", logAccountAction))
+	router.Post(wrap(newRelicApp, ctx, "/log-actions", logAccountActions))
+	router.Post(wrap(newRelicApp, ctx, "/add-product", addProduct))
+	router.Post(wrap(newRelicApp, ctx, "/create-subscription", createSubscription))
+	router.Post(wrap(newRelicApp, ctx, "/deactivate/{id}", deactivateSubscription))
+	router.Post(wrap(newRelicApp, ctx, "/evaluate-subscriptions", evaluateSubscriptionsUsage))
 
 	return router
+}
+
+func wrap(newRelicApp newrelic.Application, ctx *logging.SubscriptionsContext, pattern string, handler func(*logging.SubscriptionsContext, http.ResponseWriter, *http.Request)) (string, func(http.ResponseWriter, *http.Request)) {
+	return newrelic.WrapHandleFunc(newRelicApp, pattern, func(w http.ResponseWriter, r *http.Request) {
+		var subscriptionsContext = logging.NewSubscriptionsContext(ctx.Logger, r.Context())
+		handler(subscriptionsContext, w, r)
+	})
 }
 
 func methodNotAllowedHandler(w http.ResponseWriter, r *http.Request) {
@@ -56,7 +60,11 @@ func recovery(next http.Handler) http.Handler {
 		defer func() {
 			err := recover()
 			if err != nil {
-				log.Printf("Panic caught by recovery handler on %s request to %s: %s\n", r.Method, r.RequestURI, err)
+				subscriptionsContext := logging.NewSubscriptionsContext(logging.GlobalContext.Logger, r.Context())
+				subscriptionsContext.Error("Panic caught by recovery handler",
+					zap.String("method", r.Method),
+					zap.String("requestId", r.RequestURI),
+					zap.Any("error", err))
 
 				jsonBody, _ := json.Marshal(map[string]string{
 					"error": "There was an internal server error",
