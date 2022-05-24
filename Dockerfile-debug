@@ -19,6 +19,6 @@ EXPOSE 8080 40000
 WORKDIR /app
 COPY --from=build-env /go/bin/dlv /
 COPY --from=build-env /subscriptions /app/subscriptions
-COPY --from=build-env /dockerdev/profiles/local-docker.json /app/profiles/local-docker.json
+COPY --from=build-env /dockerdev/profiles /app/profiles
 
-CMD ["/dlv", "--listen=:40000", "--headless=true", "--api-version=2", "--accept-multiclient", "exec", "./subscriptions"]
+CMD ["/dlv", "--listen=:40000", "--headless=true", "--continue=true", "--api-version=2", "--accept-multiclient", "exec", "./subscriptions"]
