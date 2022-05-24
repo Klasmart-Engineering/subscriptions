@@ -146,7 +146,7 @@ func (db Database) SubscriptionExists(monitoringContext *monitoring.Context, acc
 		}
 	}
 
-	return subId, subscriptionState, err
+	return subId, subscriptionState, nil
 }
 
 func (db Database) CreateSubscription(monitoringContext *monitoring.Context, accountId string) (uuid uuid2.UUID, err error) {
