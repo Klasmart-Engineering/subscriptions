@@ -136,6 +136,7 @@ type GenericResponse struct {
 
 type SubscriptionResponse struct {
 	SubscriptionId string `json:"subscriptionId"`
+	Active         bool   `json:"active"`
 }
 
 type SubscriptionChange struct {

@@ -28,7 +28,7 @@ func NewHandler(db db.Database, newRelicApp newrelic.Application, ctx *monitorin
 	router.Post(wrap(newRelicApp, ctx, "/log-action", logAccountAction))
 	router.Post(wrap(newRelicApp, ctx, "/log-actions", logAccountActions))
 	router.Post(wrap(newRelicApp, ctx, "/add-product", addProduct))
-	router.Post(wrap(newRelicApp, ctx, "/create-subscription", createSubscription))
+	router.Get(wrap(newRelicApp, ctx, "/subscription/{accountId}", createOrGetSubscription))
 	router.Post(wrap(newRelicApp, ctx, "/deactivate/{id}", deactivateSubscription))
 	router.Post(wrap(newRelicApp, ctx, "/evaluate-subscriptions", evaluateSubscriptionsUsage))
 

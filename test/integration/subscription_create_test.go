@@ -1,7 +1,6 @@
 package integration_test
 
 import (
-	"bytes"
 	"encoding/json"
 	uuid2 "github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -11,9 +10,11 @@ import (
 	"testing"
 )
 
-func TestCreateSubscriptionReturnsSubscriptionUuid(t *testing.T) {
+func TestCreateSubscriptionWithNewAccountIdReturnsActiveSubscription(t *testing.T) {
+
+	accountId, err := uuid2.NewUUID()
 	helper.ResetDatabase()
-	resp, err := http.Post("http://localhost:8020/create-subscription", "application/json", bytes.NewBuffer([]byte("")))
+	resp, err := http.Get("http://localhost:8020/subscription/" + accountId.String())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -31,4 +32,5 @@ func TestCreateSubscriptionReturnsSubscriptionUuid(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	require.Equal(t, true, responseBody.Active)
 }

@@ -39,15 +39,17 @@ VALUES ('Active'),
 
 CREATE TABLE if not exists subscription_account
 (
-    id                    uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    id                    uuid DEFAULT gen_random_uuid() UNIQUE,
+    account_id            UUID NOT NULL,
     last_processed        timestamp with time zone,
     run_frequency_minutes int    NOT NULL,
     state                 serial NOT NULL,
-    FOREIGN KEY (state) REFERENCES subscription_state (id)
+    FOREIGN KEY (state) REFERENCES subscription_state (id),
+    PRIMARY KEY (id, account_id)
 );
 
-INSERT INTO subscription_account (run_frequency_minutes, state)
-VALUES (5, 1);
+INSERT INTO subscription_account (id, account_id, run_frequency_minutes, state)
+VALUES (gen_random_uuid(), gen_random_uuid(), 5, 1);
 
 CREATE TABLE if not exists subscription_account_product
 (
@@ -75,7 +77,3 @@ CREATE TABLE if not exists subscription_account_log
     valid_usage  boolean NOT NULL DEFAULT TRUE,
     FOREIGN KEY (subscription_id) REFERENCES subscription_account (id)
 );
-
-INSERT INTO subscription_account_log (subscription_id, action_type, usage, product_name,
-                                      interaction_at, valid_usage)
-VALUES ((SELECT id FROM subscription_account), 'API Call', 1, 'Simple Teacher Module', NOW(), TRUE);
