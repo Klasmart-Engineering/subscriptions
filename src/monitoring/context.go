@@ -1,4 +1,4 @@
-package log
+package monitoring
 
 import (
 	"context"
@@ -15,15 +15,15 @@ const (
 	hostnameKey   = "hostname"
 )
 
-var GlobalContext *SubscriptionsContext
+var GlobalContext *Context
 
-type SubscriptionsContext struct {
+type Context struct {
 	context.Context
 	*zap.Logger
 }
 
-func NewSubscriptionsContext(logger *zap.Logger, context context.Context) *SubscriptionsContext {
-	return &SubscriptionsContext{
+func NewMonitoringContext(logger *zap.Logger, context context.Context) *Context {
+	return &Context{
 		Context: context,
 		Logger:  logger.With(keyAndValueFromContext(context)...),
 	}

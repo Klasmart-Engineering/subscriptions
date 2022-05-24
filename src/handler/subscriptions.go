@@ -9,12 +9,12 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
-	logging "subscriptions/src/log"
 	"subscriptions/src/models"
+	"subscriptions/src/monitoring"
 	"time"
 )
 
-func evaluateSubscriptionsUsage(subscriptionsContext *logging.SubscriptionsContext, w http.ResponseWriter, r *http.Request) {
+func evaluateSubscriptionsUsage(monitoringContext *monitoring.Context, w http.ResponseWriter, r *http.Request) {
 	subscriptions, err := dbInstance.SubscriptionsToProcess()
 	if err != nil {
 		render.Render(w, r, ServerErrorRenderer(err))
@@ -22,13 +22,13 @@ func evaluateSubscriptionsUsage(subscriptionsContext *logging.SubscriptionsConte
 	}
 
 	for _, subscriptionToEvaluate := range subscriptions.SubscriptionEvaluations {
-		EvaluateSubscription(subscriptionsContext, subscriptionToEvaluate)
+		EvaluateSubscription(monitoringContext, subscriptionToEvaluate)
 	}
 
 	// do this as part of a transaction
 }
 
-func EvaluateSubscription(subscriptionsContext *logging.SubscriptionsContext, subscriptionToEvaluate models.SubscriptionEvaluation) {
+func EvaluateSubscription(monitoringContext *monitoring.Context, subscriptionToEvaluate models.SubscriptionEvaluation) {
 	productToProductUsage, err := dbInstance.UsageOfSubscription(subscriptionToEvaluate)
 
 	if err != nil {
@@ -43,8 +43,8 @@ func EvaluateSubscription(subscriptionsContext *logging.SubscriptionsContext, su
 	var evaluatedSubscription = models.EvaluatedSubscription{SubscriptionId: subscriptionToEvaluate.ID, Products: prods, DateFromEpoch: subscriptionToEvaluate.LastProcessedTime, DateToEpoch: strconv.FormatInt(now.Unix(), 10)}
 
 	//TODO revert this back to putting on a topic
-	subscriptionsContext.Info(fmt.Sprint(evaluatedSubscription))
-	dbInstance.UpdateLastProcessed(subscriptionsContext, &subscriptionToEvaluate)
+	monitoringContext.Info(fmt.Sprint(evaluatedSubscription))
+	dbInstance.UpdateLastProcessed(monitoringContext, &subscriptionToEvaluate)
 }
 
 func dbHealthcheck(w http.ResponseWriter, r *http.Request) {
@@ -68,7 +68,7 @@ func applicationLiveness(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getAllSubscriptionTypes(subscriptionsContext *logging.SubscriptionsContext, w http.ResponseWriter, r *http.Request) {
+func getAllSubscriptionTypes(monitoringContext *monitoring.Context, w http.ResponseWriter, r *http.Request) {
 	subscriptionTypes, err := dbInstance.GetSubscriptionTypes()
 	if err != nil {
 		render.Render(w, r, ServerErrorRenderer(err))
@@ -79,7 +79,7 @@ func getAllSubscriptionTypes(subscriptionsContext *logging.SubscriptionsContext,
 	}
 }
 
-func getAllSubscriptionActions(subscriptionsContext *logging.SubscriptionsContext, w http.ResponseWriter, r *http.Request) {
+func getAllSubscriptionActions(monitoringContext *monitoring.Context, w http.ResponseWriter, r *http.Request) {
 	subscriptionActions, err := dbInstance.GetAllSubscriptionActions()
 	if err != nil {
 		render.Render(w, r, ServerErrorRenderer(err))
@@ -90,7 +90,7 @@ func getAllSubscriptionActions(subscriptionsContext *logging.SubscriptionsContex
 	}
 }
 
-func logAccountActions(subscriptionsContext *logging.SubscriptionsContext, w http.ResponseWriter, r *http.Request) {
+func logAccountActions(monitoringContext *monitoring.Context, w http.ResponseWriter, r *http.Request) {
 	var actionList models.SubscriptionAccountActionList
 	bytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -105,14 +105,14 @@ func logAccountActions(subscriptionsContext *logging.SubscriptionsContext, w htt
 	}
 
 	for _, action := range actionList.Actions {
-		go logActionWithRecover(subscriptionsContext, action)
+		go logActionWithRecover(monitoringContext, action)
 	}
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Account Actions Processing"))
 }
 
-func logAccountAction(subscriptionsContext *logging.SubscriptionsContext, w http.ResponseWriter, r *http.Request) {
+func logAccountAction(monitoringContext *monitoring.Context, w http.ResponseWriter, r *http.Request) {
 	var accountAction models.SubscriptionAccountAction
 	bytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -133,7 +133,7 @@ func logAccountAction(subscriptionsContext *logging.SubscriptionsContext, w http
 	}
 }
 
-func addProduct(subscriptionsContext *logging.SubscriptionsContext, w http.ResponseWriter, r *http.Request) {
+func addProduct(monitoringContext *monitoring.Context, w http.ResponseWriter, r *http.Request) {
 	var product models.AddProduct
 	bytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -160,8 +160,8 @@ func addProduct(subscriptionsContext *logging.SubscriptionsContext, w http.Respo
 	}
 }
 
-func createSubscription(subscriptionsContext *logging.SubscriptionsContext, w http.ResponseWriter, r *http.Request) {
-	subscription, err := dbInstance.CreateSubscription(subscriptionsContext)
+func createSubscription(monitoringContext *monitoring.Context, w http.ResponseWriter, r *http.Request) {
+	subscription, err := dbInstance.CreateSubscription(monitoringContext)
 
 	if err != nil {
 		render.Render(w, r, ErrorRenderer(err))
@@ -174,7 +174,7 @@ func createSubscription(subscriptionsContext *logging.SubscriptionsContext, w ht
 	}
 }
 
-func deactivateSubscription(subscriptionsContext *logging.SubscriptionsContext, w http.ResponseWriter, r *http.Request) {
+func deactivateSubscription(monitoringContext *monitoring.Context, w http.ResponseWriter, r *http.Request) {
 	subscriptionId := chi.URLParam(r, "id")
 	var inactiveState = 2 //Inactive
 	err := dbInstance.UpdateSubscriptionStatus(subscriptionId, inactiveState)
@@ -195,15 +195,15 @@ func AddProductToSubscription(product models.AddProduct) error {
 	return err
 }
 
-func logActionWithRecover(subscriptionsContext *logging.SubscriptionsContext, action models.SubscriptionAccountAction) {
+func logActionWithRecover(monitoringContext *monitoring.Context, action models.SubscriptionAccountAction) {
 	defer func() {
 		if r := recover(); r != nil {
-			subscriptionsContext.Error("Something went wrong logging action", zap.Any("error", r))
+			monitoringContext.Error("Something went wrong logging action", zap.Any("error", r))
 		}
 	}()
 
 	logAction := LogAction(action)
-	subscriptionsContext.Info(logAction.Details)
+	monitoringContext.Info(logAction.Details)
 }
 
 func LogAction(accountAction models.SubscriptionAccountAction) models.LogResponse {

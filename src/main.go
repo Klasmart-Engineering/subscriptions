@@ -11,8 +11,8 @@ import (
 	"subscriptions/src/config"
 	db "subscriptions/src/database"
 	"subscriptions/src/handler"
-	"subscriptions/src/instrument"
-	logging "subscriptions/src/log"
+	"subscriptions/src/monitoring"
+	"subscriptions/src/utils"
 	"syscall"
 	"time"
 )
@@ -24,32 +24,32 @@ func main() {
 }
 
 func startServer(ctx context.Context) {
-	config.LoadProfile(instrument.MustGetEnvOrFlag("profile"))
+	config.LoadProfile(utils.MustGetEnvOrFlag("profile"))
 	activeConfig := config.GetConfig()
 
-	subscriptionsContext := getSubscriptionsContext(ctx)
-	logging.GlobalContext = subscriptionsContext
+	monitoringContext := getMonitoringContext(ctx)
+	monitoring.GlobalContext = monitoringContext
 
-	subscriptionsContext.Info("Starting Server",
+	monitoringContext.Info("Starting Server",
 		zap.String("profile", config.GetProfileName()),
 		zap.Int("port", activeConfig.Server.Port))
 
 	listener, err := net.Listen("tcp", ":"+strconv.Itoa(activeConfig.Server.Port))
 	if err != nil {
-		subscriptionsContext.Fatal("Unable to start Server: %s", zap.Error(err))
+		monitoringContext.Fatal("Unable to start Server: %s", zap.Error(err))
 	}
 
 	database := setupDatabase()
 	defer database.Conn.Close()
 
-	newRelic, _ := instrument.GetNewRelic(activeConfig.NewRelicConfig.EntityName,
+	newRelic, _ := monitoring.GetNewRelic(activeConfig.NewRelicConfig.EntityName,
 		activeConfig.NewRelicConfig.LicenseKey,
 		activeConfig.NewRelicConfig.Enabled,
 		activeConfig.NewRelicConfig.TracerEnabled,
 		activeConfig.NewRelicConfig.SpanEventEnabled,
 		activeConfig.NewRelicConfig.ErrorCollectorEnabled)
 
-	httpHandler := handler.NewHandler(database, newRelic.App, subscriptionsContext)
+	httpHandler := handler.NewHandler(database, newRelic.App, monitoringContext)
 
 	server := &http.Server{
 		Handler: httpHandler,
@@ -58,23 +58,23 @@ func startServer(ctx context.Context) {
 		server.Serve(listener)
 	}()
 	defer Stop(server)
-	subscriptionsContext.Info("Started Server")
+	monitoringContext.Info("Started Server")
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
 	<-ch
-	subscriptionsContext.Info("Stopping Server")
+	monitoringContext.Info("Stopping Server")
 }
 
 func Stop(server *http.Server) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := server.Shutdown(ctx); err != nil {
-		logging.GlobalContext.Error("Could not shut down server correctly", zap.Error(err))
+		monitoring.GlobalContext.Error("Could not shut down server correctly", zap.Error(err))
 		os.Exit(1)
 	}
 }
 
-func getSubscriptionsContext(ctx context.Context) *logging.SubscriptionsContext {
+func getMonitoringContext(ctx context.Context) *monitoring.Context {
 	var l *zap.Logger
 	if config.GetConfig().Logging.DevelopmentLogger {
 		l, _ = zap.NewDevelopment()
@@ -82,7 +82,7 @@ func getSubscriptionsContext(ctx context.Context) *logging.SubscriptionsContext 
 		l, _ = zap.NewProduction()
 	}
 
-	return logging.NewSubscriptionsContext(l, ctx)
+	return monitoring.NewMonitoringContext(l, ctx)
 }
 
 func setupDatabase() db.Database {
@@ -96,7 +96,7 @@ func setupDatabase() db.Database {
 		activeConfig.Database.Port)
 
 	if err != nil {
-		logging.GlobalContext.Fatal("Could not set up database", zap.Error(err))
+		monitoring.GlobalContext.Fatal("Could not set up database", zap.Error(err))
 	}
 
 	return database
