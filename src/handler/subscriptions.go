@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"io/ioutil"
 	"net/http"
@@ -160,13 +161,33 @@ func addProduct(monitoringContext *monitoring.Context, w http.ResponseWriter, r 
 	}
 }
 
-func createSubscription(monitoringContext *monitoring.Context, w http.ResponseWriter, r *http.Request) {
-	subscription, err := dbInstance.CreateSubscription(monitoringContext)
+func createOrGetSubscription(monitoringContext *monitoring.Context, w http.ResponseWriter, r *http.Request) {
+	accountId := chi.URLParam(r, "accountId")
+	subId, subscriptionState, err := dbInstance.SubscriptionExists(monitoringContext, accountId)
 
 	if err != nil {
-		render.Render(w, r, ErrorRenderer(err))
+		if subId == uuid.Nil {
+			subId, err := dbInstance.CreateSubscription(monitoringContext, accountId)
+			if err != nil {
+				render.Render(w, r, ErrorRenderer(err))
+			}
+
+			response := models.SubscriptionResponse{SubscriptionId: subId.String(), Active: true}
+			if err := render.Render(w, r, &response); err != nil {
+				render.Render(w, r, ErrorRenderer(err))
+			}
+		} else {
+			render.Render(w, r, ErrorRenderer(err))
+		}
 	} else {
-		response := models.SubscriptionResponse{SubscriptionId: subscription.String()}
+		var active bool
+		if subscriptionState == 1 {
+			active = true
+		} else {
+			active = false
+		}
+
+		response := models.SubscriptionResponse{SubscriptionId: subId.String(), Active: active}
 
 		if err := render.Render(w, r, &response); err != nil {
 			render.Render(w, r, ErrorRenderer(err))

@@ -3,6 +3,7 @@ package integration_test
 import (
 	"bytes"
 	"encoding/json"
+	uuid2 "github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"net/http"
 	"subscriptions/src/models"
@@ -12,7 +13,8 @@ import (
 
 func TestDeactivateSubscriptionReturnsSubscriptionUuid(t *testing.T) {
 	helper.ResetDatabase()
-	resp, err := http.Post("http://localhost:8020/create-subscription", "application/json", bytes.NewBuffer([]byte("")))
+	accountId, err := uuid2.NewUUID()
+	resp, err := http.Get("http://localhost:8020/subscription/" + accountId.String())
 	if err != nil {
 		t.Fatal(err)
 	}

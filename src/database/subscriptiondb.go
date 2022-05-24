@@ -129,16 +129,36 @@ func (db Database) UpdateLastProcessed(monitoringContext *monitoring.Context, su
 
 }
 
-func (db Database) CreateSubscription(monitoringContext *monitoring.Context) (uuid uuid2.UUID, err error) {
-	var minutes = 43200 //TODO how do we define before adding a product
-	var state = 1       // Active
+func (db Database) SubscriptionExists(monitoringContext *monitoring.Context, accountId string) (subscriptionId uuid2.UUID, state int, err error) {
+
+	var subId uuid2.UUID
+	var subscriptionState int
+	sqlStatement := `SELECT id, state FROM subscription_account
+						WHERE account_id = $1;`
+
+	err = db.Conn.QueryRow(sqlStatement, accountId).Scan(&subId, &subscriptionState)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return subId, 0, fmt.Errorf("no rows returned. The subscription does not exist for account %s, %s", accountId, err)
+		} else {
+			monitoringContext.Panic("Unable to verify if subscription exists", zap.Error(err))
+		}
+	}
+
+	return subId, subscriptionState, err
+}
+
+func (db Database) CreateSubscription(monitoringContext *monitoring.Context, accountId string) (uuid uuid2.UUID, err error) {
+	var minutes = 43200 //30 days by default for now
+	var state = 1       // Active by default
 
 	var subscriptionId uuid2.UUID
 	sqlStatement := `
-						INSERT INTO subscription_account (run_frequency_minutes, state)
-						VALUES($1, $2) RETURNING id;`
+						INSERT INTO subscription_account (account_id, run_frequency_minutes, state)
+						VALUES($1, $2, $3) RETURNING id;`
 
-	err = db.Conn.QueryRow(sqlStatement, minutes, state).Scan(&subscriptionId)
+	err = db.Conn.QueryRow(sqlStatement, accountId, minutes, state).Scan(&subscriptionId)
 	if err != nil {
 		monitoringContext.Panic("Unable to create subscription", zap.Error(err))
 	}
