@@ -18,6 +18,7 @@ spec:
           image: local-go-image
           ports:
             - containerPort: 8080
+            - containerPort: 40000
           env:
           - name: PROFILE
             value: local-k3d
@@ -47,6 +48,24 @@ spec:
     - name: "8080"
       port: 8080
       targetPort: 8080
+  selector:
+    app: go-app
+status:
+  loadBalancer: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    service: go-debug
+  name: go-debug
+  namespace: subscriptions
+spec:
+  ports:
+    - protocol: TCP
+      name: "40000"
+      port: 40000
+      targetPort: 40000
   selector:
     app: go-app
 status:

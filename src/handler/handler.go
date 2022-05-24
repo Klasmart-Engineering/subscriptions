@@ -9,12 +9,12 @@ import (
 	"go.uber.org/zap"
 	"net/http"
 	db "subscriptions/src/database"
-	logging "subscriptions/src/log"
+	"subscriptions/src/monitoring"
 )
 
 var dbInstance db.Database
 
-func NewHandler(db db.Database, newRelicApp newrelic.Application, ctx *logging.SubscriptionsContext) http.Handler {
+func NewHandler(db db.Database, newRelicApp newrelic.Application, ctx *monitoring.Context) http.Handler {
 	router := chi.NewRouter()
 	dbInstance = db
 	router.Use(recovery)
@@ -35,16 +35,16 @@ func NewHandler(db db.Database, newRelicApp newrelic.Application, ctx *logging.S
 	return router
 }
 
-func wrap(newRelicApp newrelic.Application, ctx *logging.SubscriptionsContext, pattern string, handler func(*logging.SubscriptionsContext, http.ResponseWriter, *http.Request)) (string, func(http.ResponseWriter, *http.Request)) {
+func wrap(newRelicApp newrelic.Application, ctx *monitoring.Context, pattern string, handler func(*monitoring.Context, http.ResponseWriter, *http.Request)) (string, func(http.ResponseWriter, *http.Request)) {
 	return newrelic.WrapHandleFunc(newRelicApp, pattern, func(w http.ResponseWriter, r *http.Request) {
-		var subscriptionsContext = logging.NewSubscriptionsContext(ctx.Logger, r.Context())
-		subscriptionsContext.Info("Request started",
+		var monitoringContext = monitoring.NewMonitoringContext(ctx.Logger, r.Context())
+		monitoringContext.Info("Request started",
 			zap.String("method", r.Method),
 			zap.String("url", r.URL.String()))
-		defer subscriptionsContext.Info("Request finished",
+		defer monitoringContext.Info("Request finished",
 			zap.String("method", r.Method),
 			zap.String("url", r.URL.String()))
-		handler(subscriptionsContext, w, r)
+		handler(monitoringContext, w, r)
 	})
 }
 
@@ -66,8 +66,8 @@ func recovery(next http.Handler) http.Handler {
 		defer func() {
 			err := recover()
 			if err != nil {
-				subscriptionsContext := logging.NewSubscriptionsContext(logging.GlobalContext.Logger, r.Context())
-				subscriptionsContext.Error("Panic caught by recovery handler",
+				monitoringContext := monitoring.NewMonitoringContext(monitoring.GlobalContext.Logger, r.Context())
+				monitoringContext.Error("Panic caught by recovery handler",
 					zap.String("method", r.Method),
 					zap.String("requestId", r.RequestURI),
 					zap.Any("error", err))

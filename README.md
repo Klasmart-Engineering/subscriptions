@@ -77,6 +77,8 @@ Go back to https://github.com/settings/tokens, click on the "Configure SSO" drop
 - Then add the following configuration in Goland (TODO also add instructions for VScode)
 ![img.png](img.png)
 
+Or to debug the instance in K3D, connect to port 40002 instead.
+
 ##### To run unit tests
 
 ```
