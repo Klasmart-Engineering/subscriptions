@@ -38,6 +38,12 @@ func NewHandler(db db.Database, newRelicApp newrelic.Application, ctx *monitorin
 func wrap(newRelicApp newrelic.Application, ctx *monitoring.Context, pattern string, handler func(*monitoring.Context, http.ResponseWriter, *http.Request)) (string, func(http.ResponseWriter, *http.Request)) {
 	return newrelic.WrapHandleFunc(newRelicApp, pattern, func(w http.ResponseWriter, r *http.Request) {
 		var monitoringContext = monitoring.NewMonitoringContext(ctx.Logger, r.Context())
+		monitoringContext.Info("Request started",
+			zap.String("method", r.Method),
+			zap.String("url", r.URL.String()))
+		defer monitoringContext.Info("Request finished",
+			zap.String("method", r.Method),
+			zap.String("url", r.URL.String()))
 		handler(monitoringContext, w, r)
 	})
 }
