@@ -29,6 +29,7 @@ type loggingConfig struct {
 }
 
 type newRelicConfig struct {
+	EntityName            string
 	Enabled               bool
 	LicenseKey            string
 	TracerEnabled         bool

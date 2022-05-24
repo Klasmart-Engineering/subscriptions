@@ -42,7 +42,7 @@ func startServer(ctx context.Context) {
 	database := setupDatabase()
 	defer database.Conn.Close()
 
-	newRelic, _ := instrument.GetNewRelic("Subscription Service",
+	newRelic, _ := instrument.GetNewRelic(activeConfig.NewRelicConfig.EntityName,
 		activeConfig.NewRelicConfig.LicenseKey,
 		activeConfig.NewRelicConfig.Enabled,
 		activeConfig.NewRelicConfig.TracerEnabled,
