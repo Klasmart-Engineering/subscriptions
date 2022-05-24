@@ -10,10 +10,6 @@ import (
 	"time"
 )
 
-const (
-	UserLimit = "UserLogin"
-)
-
 func (db Database) Healthcheck() (bool, error) {
 	var up int
 	if err := db.Conn.QueryRow(`
