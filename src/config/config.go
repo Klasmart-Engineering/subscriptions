@@ -7,7 +7,7 @@ import (
 	"os"
 	"reflect"
 	"strings"
-	"subscriptions/src/instrument"
+	"subscriptions/src/utils"
 )
 
 var activeConfig *config
@@ -29,6 +29,7 @@ type loggingConfig struct {
 }
 
 type newRelicConfig struct {
+	EntityName            string
 	Enabled               bool
 	LicenseKey            string
 	TracerEnabled         bool
@@ -79,21 +80,21 @@ func replaceFromEnvironmentVariables(path string, thing interface{}) {
 		}
 
 		if fieldType.Kind() == reflect.String {
-			value := instrument.GetStringEnv(fieldName)
+			value := utils.GetStringEnv(fieldName)
 			if value != nil {
 				configValue.Field(i).SetString(*value)
 			}
 		}
 
 		if fieldType.Kind() == reflect.Int {
-			value := instrument.GetIntEnv(fieldName)
+			value := utils.GetIntEnv(fieldName)
 			if value != nil {
 				configValue.Field(i).SetInt(int64(*value))
 			}
 		}
 
 		if fieldType.Kind() == reflect.Bool {
-			value := instrument.GetBoolEnv(fieldName)
+			value := utils.GetBoolEnv(fieldName)
 			if value != nil {
 				configValue.Field(i).SetBool(*value)
 			}

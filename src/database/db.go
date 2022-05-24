@@ -6,7 +6,7 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	_ "github.com/lib/pq"
 	"go.uber.org/zap"
-	logging "subscriptions/src/log"
+	"subscriptions/src/monitoring"
 	"time"
 )
 
@@ -21,7 +21,7 @@ func Initialize(username, password, database, host string, port int) (Database, 
 	db := Database{}
 
 	connect := func() error {
-		logging.GlobalContext.Info("Attempting to connect to database",
+		monitoring.GlobalContext.Info("Attempting to connect to database",
 			zap.String("username", username),
 			zap.String("host", host),
 			zap.Int("port", port))
@@ -29,17 +29,17 @@ func Initialize(username, password, database, host string, port int) (Database, 
 			host, port, username, password, database)
 		conn, err := sql.Open("postgres", dsn)
 		if err != nil {
-			logging.GlobalContext.Error("Could not connect to database", zap.Error(err))
+			monitoring.GlobalContext.Error("Could not connect to database", zap.Error(err))
 			return err
 		}
 		db.Conn = conn
 		err = db.Conn.Ping()
 		if err != nil {
-			logging.GlobalContext.Error("Could not ping database", zap.Error(err))
+			monitoring.GlobalContext.Error("Could not ping database", zap.Error(err))
 			return err
 		}
 
-		logging.GlobalContext.Info("Database connection established")
+		monitoring.GlobalContext.Info("Database connection established")
 		return nil
 	}
 	err := backoff.Retry(connect, &backoff.ExponentialBackOff{
