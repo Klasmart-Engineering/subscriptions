@@ -27,29 +27,25 @@ func startServer(ctx context.Context) {
 	config.LoadProfile(utils.MustGetEnvOrFlag("profile"))
 	activeConfig := config.GetConfig()
 
-	monitoringContext := getMonitoringContext(ctx)
-	monitoring.GlobalContext = monitoringContext
+	monitoring.SetupGlobalMonitoringContext(ctx)
+	monitoring.SetupNewRelic(activeConfig.NewRelicConfig.EntityName,
+		activeConfig.NewRelicConfig.LicenseKey,
+		activeConfig.NewRelicConfig.Enabled,
+		activeConfig.NewRelicConfig.TracerEnabled)
 
-	monitoringContext.Info("Starting Server",
+	monitoring.GlobalContext.Info("Starting Server",
 		zap.String("profile", config.GetProfileName()),
 		zap.Int("port", activeConfig.Server.Port))
 
 	listener, err := net.Listen("tcp", ":"+strconv.Itoa(activeConfig.Server.Port))
 	if err != nil {
-		monitoringContext.Fatal("Unable to start Server: %s", zap.Error(err))
+		monitoring.GlobalContext.Fatal("Unable to start Server: %s", zap.Error(err))
 	}
 
 	database := setupDatabase()
 	defer database.Conn.Close()
 
-	monitoring.SetupNewRelic(activeConfig.NewRelicConfig.EntityName,
-		activeConfig.NewRelicConfig.LicenseKey,
-		activeConfig.NewRelicConfig.Enabled,
-		activeConfig.NewRelicConfig.TracerEnabled,
-		activeConfig.NewRelicConfig.SpanEventEnabled,
-		activeConfig.NewRelicConfig.ErrorCollectorEnabled)
-
-	httpHandler := handler.NewHandler(database, monitoringContext)
+	httpHandler := handler.NewHandler(database, monitoring.GlobalContext)
 
 	server := &http.Server{
 		Handler: httpHandler,
@@ -58,11 +54,11 @@ func startServer(ctx context.Context) {
 		server.Serve(listener)
 	}()
 	defer Stop(server)
-	monitoringContext.Info("Started Server")
+	monitoring.GlobalContext.Info("Started Server")
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
 	<-ch
-	monitoringContext.Info("Stopping Server")
+	monitoring.GlobalContext.Info("Stopping Server")
 }
 
 func Stop(server *http.Server) {
@@ -72,17 +68,6 @@ func Stop(server *http.Server) {
 		monitoring.GlobalContext.Error("Could not shut down server correctly", zap.Error(err))
 		os.Exit(1)
 	}
-}
-
-func getMonitoringContext(ctx context.Context) *monitoring.Context {
-	var l *zap.Logger
-	if config.GetConfig().Logging.DevelopmentLogger {
-		l, _ = zap.NewDevelopment()
-	} else {
-		l, _ = zap.NewProduction()
-	}
-
-	return monitoring.NewMonitoringContext(l, ctx)
 }
 
 func setupDatabase() db.Database {

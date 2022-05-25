@@ -23,10 +23,9 @@ func (db Database) Healthcheck() (bool, error) {
 	return up == 1, nil
 }
 
-func (db Database) GetSubscriptionEvaluation(subscriptionId string) (models.SubscriptionEvaluation, error) {
-
+func (db Database) GetSubscriptionEvaluation(monitoringContext *monitoring.Context, subscriptionId string) (models.SubscriptionEvaluation, error) {
 	subscriptionEvaluation := models.SubscriptionEvaluation{}
-	rows, err := db.Conn.Query(`
+	rows, err := db.Conn.QueryContext(monitoringContext, `
 		SELECT subAccount.id, subProduct.threshold, subProduct.product, subAccount.last_processed
 		FROM subscription_account subAccount
 		JOIN subscription_account_product subProduct
@@ -68,9 +67,9 @@ func (db Database) GetSubscriptionEvaluation(subscriptionId string) (models.Subs
 	return subscriptionEvaluation, nil
 }
 
-func (db Database) IsValidSubscriptionId(subscriptionId string) (bool, error) {
+func (db Database) IsValidSubscriptionId(monitoringContext *monitoring.Context, subscriptionId string) (bool, error) {
 	var valid int
-	if err := db.Conn.QueryRow(`
+	if err := db.Conn.QueryRowContext(monitoringContext, `
 			SELECT 1 AS up 
 			FROM subscription_account
 			WHERE id = $1`, subscriptionId).Scan(&valid); err != nil {
@@ -82,11 +81,11 @@ func (db Database) IsValidSubscriptionId(subscriptionId string) (bool, error) {
 	return valid == 1, nil
 }
 
-func (db Database) UnsubscribeFromProducts(subscriptionId string) error {
+func (db Database) UnsubscribeFromProducts(monitoringContext *monitoring.Context, subscriptionId string) error {
 	sqlStatement := `
 			DELETE FROM subscription_account_product
 			WHERE subscription_id = $1`
-	_, err := db.Conn.Exec(sqlStatement, subscriptionId)
+	_, err := db.Conn.ExecContext(monitoringContext, sqlStatement, subscriptionId)
 	if err != nil {
 		return fmt.Errorf("unable to unsubscribe products from subscription", subscriptionId)
 	}
@@ -94,9 +93,9 @@ func (db Database) UnsubscribeFromProducts(subscriptionId string) error {
 	return nil
 }
 
-func (db Database) IsSubscriptionActive(subscriptionId string) (bool, error) {
+func (db Database) IsSubscriptionActive(monitoringContext *monitoring.Context, subscriptionId string) (bool, error) {
 	var state string
-	if err := db.Conn.QueryRow(`
+	if err := db.Conn.QueryRowContext(monitoringContext, `
 			SELECT ss.name 
 			FROM subscription_account sa 
 			JOIN subscription_state ss
@@ -112,12 +111,11 @@ func (db Database) IsSubscriptionActive(subscriptionId string) (bool, error) {
 
 func (db Database) UpdateLastProcessed(monitoringContext *monitoring.Context, subscription *models.SubscriptionEvaluation) {
 
-	sqlStatement := `
-						UPDATE subscription_account
+	sqlStatement := `UPDATE subscription_account
 						 SET last_processed = NOW()
 						WHERE id = $1;`
 
-	_, err := db.Conn.Exec(sqlStatement, subscription.ID)
+	_, err := db.Conn.ExecContext(monitoringContext, sqlStatement, subscription.ID)
 	if err != nil {
 		monitoringContext.Error("Unable to update the last processed time of subscription id",
 			zap.String("subscription", subscription.ID))
@@ -132,7 +130,7 @@ func (db Database) SubscriptionExists(monitoringContext *monitoring.Context, acc
 	sqlStatement := `SELECT id, state FROM subscription_account
 						WHERE account_id = $1;`
 
-	err = db.Conn.QueryRow(sqlStatement, accountId).Scan(&subId, &subscriptionState)
+	err = db.Conn.QueryRowContext(monitoringContext, sqlStatement, accountId).Scan(&subId, &subscriptionState)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -150,11 +148,10 @@ func (db Database) CreateSubscription(monitoringContext *monitoring.Context, acc
 	var state = 1       // Active by default
 
 	var subscriptionId uuid2.UUID
-	sqlStatement := `
-						INSERT INTO subscription_account (account_id, run_frequency_minutes, state)
+	sqlStatement := `INSERT INTO subscription_account (account_id, run_frequency_minutes, state)
 						VALUES($1, $2, $3) RETURNING id;`
 
-	err = db.Conn.QueryRow(sqlStatement, accountId, minutes, state).Scan(&subscriptionId)
+	err = db.Conn.QueryRowContext(monitoringContext, sqlStatement, accountId, minutes, state).Scan(&subscriptionId)
 	if err != nil {
 		monitoringContext.Panic("Unable to create subscription", zap.Error(err))
 	}
@@ -162,14 +159,14 @@ func (db Database) CreateSubscription(monitoringContext *monitoring.Context, acc
 	return subscriptionId, err
 }
 
-func (db Database) UpdateSubscriptionStatus(subscriptionId string, active int) error {
+func (db Database) UpdateSubscriptionStatus(monitoringContext *monitoring.Context, subscriptionId string, active int) error {
 
 	sqlStatement := `
 			UPDATE subscription_account
 			 SET state = $1
 			WHERE id = $2;`
 
-	_, err := db.Conn.Exec(sqlStatement, &active, &subscriptionId)
+	_, err := db.Conn.ExecContext(monitoringContext, sqlStatement, &active, &subscriptionId)
 	if err != nil {
 		return err
 	}
@@ -177,7 +174,7 @@ func (db Database) UpdateSubscriptionStatus(subscriptionId string, active int) e
 	return nil
 }
 
-func (db Database) UsageOfSubscription(subscriptionEvaluation models.SubscriptionEvaluation) (map[models.SubscriptionEvaluationProduct]int, error) {
+func (db Database) UsageOfSubscription(monitoringContext *monitoring.Context, subscriptionEvaluation models.SubscriptionEvaluation) (map[models.SubscriptionEvaluationProduct]int, error) {
 
 	var countInteractionsSql = `
 			SELECT COUNT(1) AS subscription_usage, sap.product As productName, sap.threshold, sap.type 
@@ -203,7 +200,7 @@ func (db Database) UsageOfSubscription(subscriptionEvaluation models.Subscriptio
 		var productType string
 
 		if subscriptionEvaluation.LastProcessedTime == "" {
-			if err := db.Conn.QueryRow(countInteractionsSql+groupBySql,
+			if err := db.Conn.QueryRowContext(monitoringContext, countInteractionsSql+groupBySql,
 				subIdUUID, product.Name).Scan(&productUsage, &productName, &productThreshold, &productType); err != nil {
 				if err == sql.ErrNoRows {
 					continue
@@ -211,7 +208,7 @@ func (db Database) UsageOfSubscription(subscriptionEvaluation models.Subscriptio
 			}
 
 		} else {
-			if err := db.Conn.QueryRow(countInteractionsSql+countInteractionWithTimestamp+groupBySql,
+			if err := db.Conn.QueryRowContext(monitoringContext, countInteractionsSql+countInteractionWithTimestamp+groupBySql,
 				subIdUUID, product.Name, subscriptionEvaluation.LastProcessedTime).Scan(&productUsage, &productName, &productThreshold, &productType); err != nil {
 				if err == sql.ErrNoRows {
 					continue
@@ -232,10 +229,10 @@ func (db Database) UsageOfSubscription(subscriptionEvaluation models.Subscriptio
 	return productToProductUsage, nil
 }
 
-func (db Database) SubscriptionsToProcess() (*models.SubscriptionEvaluations, error) {
+func (db Database) SubscriptionsToProcess(monitoringContext *monitoring.Context) (*models.SubscriptionEvaluations, error) {
 
 	evaluations := &models.SubscriptionEvaluations{}
-	rows, err := db.Conn.Query(`
+	rows, err := db.Conn.QueryContext(monitoringContext, `
 		SELECT subAccount.id, subProduct.threshold, subProduct.product, subProduct.type, subAccount.last_processed
 		FROM subscription_account subAccount
 		JOIN subscription_account_product subProduct
@@ -328,10 +325,10 @@ func (db Database) SubscriptionsToProcess() (*models.SubscriptionEvaluations, er
 	return evaluations, nil
 }
 
-func (db Database) GetSubscriptionTypes() (*models.SubscriptionTypeList, error) {
+func (db Database) GetSubscriptionTypes(monitoringContext *monitoring.Context) (*models.SubscriptionTypeList, error) {
 	list := &models.SubscriptionTypeList{}
 	sqlQuery := "SELECT id, name FROM subscription_type ORDER BY id DESC"
-	rows, err := db.Conn.Query(sqlQuery)
+	rows, err := db.Conn.QueryContext(monitoringContext, sqlQuery)
 	if err != nil {
 		return list, err
 	}
@@ -346,9 +343,10 @@ func (db Database) GetSubscriptionTypes() (*models.SubscriptionTypeList, error) 
 	return list, nil
 }
 
-func (db Database) GetAllSubscriptionActions() (*models.SubscriptionActionList, error) {
+func (db Database) GetAllSubscriptionActions(monitoringContext *monitoring.Context) (*models.SubscriptionActionList, error) {
 	list := &models.SubscriptionActionList{}
-	rows, err := db.Conn.Query("SELECT name, description, unit FROM subscription_action")
+
+	rows, err := db.Conn.QueryContext(monitoringContext, "SELECT name, description, unit FROM subscription_action")
 	if err != nil {
 		return list, err
 	}
@@ -363,9 +361,9 @@ func (db Database) GetAllSubscriptionActions() (*models.SubscriptionActionList, 
 	return list, nil
 }
 
-func (db Database) LogUserAction(accountAction models.SubscriptionAccountAction) {
+func (db Database) LogUserAction(monitoringContext *monitoring.Context, accountAction models.SubscriptionAccountAction) {
 
-	stmt, es := db.Conn.Prepare(`
+	stmt, es := db.Conn.PrepareContext(monitoringContext, `
 			INSERT INTO subscription_account_log (subscription_id, action_type, usage, product_name, interaction_at)
 			VALUES ($1, $2, $3, $4, to_timestamp($5))`)
 	if es != nil {
@@ -383,9 +381,9 @@ func (db Database) LogUserAction(accountAction models.SubscriptionAccountAction)
 
 }
 
-func (db Database) UpdateChargeableLog(accountAction models.SubscriptionAccountAction) {
+func (db Database) UpdateChargeableLog(monitoringContext *monitoring.Context, accountAction models.SubscriptionAccountAction) {
 
-	stmt, es := db.Conn.Prepare(`
+	stmt, es := db.Conn.PrepareContext(monitoringContext, `
 			UPDATE subscription_account_log SET valid_usage = FALSE
 			WHERE subscription_id = $1 AND action_type = $2 AND usage = $3 AND product_name = $4 AND interaction_at = to_timestamp($5)`)
 	if es != nil {
@@ -403,10 +401,10 @@ func (db Database) UpdateChargeableLog(accountAction models.SubscriptionAccountA
 
 }
 
-func (db Database) CountInteractionsForSubscription(userAction models.SubscriptionAccountAction) (int, error) {
+func (db Database) CountInteractionsForSubscription(monitoringContext *monitoring.Context, userAction models.SubscriptionAccountAction) (int, error) {
 
 	var lastProcessedTime time.Time
-	if err := db.Conn.QueryRow(`
+	if err := db.Conn.QueryRowContext(monitoringContext, `
 			SELECT last_processed
 			FROM subscription_account
 			WHERE id = $1 `,
@@ -427,14 +425,14 @@ func (db Database) CountInteractionsForSubscription(userAction models.Subscripti
 		interactionTimeSql := "AND interaction_at > $3"
 		var query = countInteractionsSql + interactionTimeSql
 
-		if err := db.Conn.QueryRow(query,
+		if err := db.Conn.QueryRowContext(monitoringContext, query,
 			userAction.SubscriptionId, userAction.Product, lastProcessedTime).Scan(&countUserInteractions); err != nil {
 			if err == sql.ErrNoRows {
 				return countUserInteractions, fmt.Errorf("unknown count on user: %s", userAction.SubscriptionId)
 			}
 		}
 	} else {
-		if err := db.Conn.QueryRow(countInteractionsSql,
+		if err := db.Conn.QueryRowContext(monitoringContext, countInteractionsSql,
 			userAction.SubscriptionId, userAction.Product).Scan(&countUserInteractions); err != nil {
 			if err == sql.ErrNoRows {
 				return countUserInteractions, fmt.Errorf("unknown count on user: %s", userAction.SubscriptionId)
@@ -445,10 +443,10 @@ func (db Database) CountInteractionsForSubscription(userAction models.Subscripti
 	return countUserInteractions, nil
 }
 
-func (db Database) GetThresholdForSubscriptionProduct(userAction models.SubscriptionAccountAction) (int, error) {
+func (db Database) GetThresholdForSubscriptionProduct(monitoringContext *monitoring.Context, userAction models.SubscriptionAccountAction) (int, error) {
 
 	var subscriptionThreshold int
-	if err := db.Conn.QueryRow(`
+	if err := db.Conn.QueryRowContext(monitoringContext, `
 			SELECT sap.threshold 
 			FROM subscription_account_product sap 
 			JOIN subscription_account sa
@@ -462,9 +460,9 @@ func (db Database) GetThresholdForSubscriptionProduct(userAction models.Subscrip
 	return subscriptionThreshold, nil
 }
 
-func (db Database) AddProductToSubscription(addProduct models.AddProduct) error {
+func (db Database) AddProductToSubscription(monitoringContext *monitoring.Context, addProduct models.AddProduct) error {
 
-	stmt, err := db.Conn.Prepare(`
+	stmt, err := db.Conn.PrepareContext(monitoringContext, `
 			INSERT INTO subscription_account_product (subscription_id, product, type, threshold, action)
 			VALUES ($1, $2, $3, $4, $5)`)
 	if err != nil {

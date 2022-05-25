@@ -29,12 +29,10 @@ type loggingConfig struct {
 }
 
 type newRelicConfig struct {
-	EntityName            string
-	Enabled               bool
-	LicenseKey            string
-	TracerEnabled         bool
-	SpanEventEnabled      bool
-	ErrorCollectorEnabled bool
+	EntityName    string
+	Enabled       bool
+	LicenseKey    string
+	TracerEnabled bool
 }
 
 type databaseConfig struct {
