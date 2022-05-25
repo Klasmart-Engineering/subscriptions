@@ -10,6 +10,7 @@ docker-compose -f docker-compose-integration-tests.yml up -d --build web
 
 echo "Starting integration tests"
 
+go clean -testcache
 go test -v ./test/integration/...
 
 echo "Finished integration tests"

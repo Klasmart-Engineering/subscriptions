@@ -374,7 +374,7 @@ func (db Database) LogUserAction(monitoringContext *monitoring.Context, accountA
 	if es != nil {
 		panic(es.Error())
 	}
-	_, er := stmt.Exec(subIdUUID, accountAction.ActionType, accountAction.UsageAmount, accountAction.Product, accountAction.InteractionTimeEpoch)
+	_, er := stmt.ExecContext(monitoringContext, subIdUUID, accountAction.ActionType, accountAction.UsageAmount, accountAction.Product, accountAction.InteractionTimeEpoch)
 	if er != nil {
 		panic(er.Error())
 	}
@@ -394,7 +394,7 @@ func (db Database) UpdateChargeableLog(monitoringContext *monitoring.Context, ac
 	if es != nil {
 		panic(es.Error())
 	}
-	_, er := stmt.Exec(subIdUUID, accountAction.ActionType, accountAction.UsageAmount, accountAction.Product, accountAction.InteractionTimeEpoch)
+	_, er := stmt.ExecContext(monitoringContext, subIdUUID, accountAction.ActionType, accountAction.UsageAmount, accountAction.Product, accountAction.InteractionTimeEpoch)
 	if er != nil {
 		panic(er.Error())
 	}
@@ -475,7 +475,7 @@ func (db Database) AddProductToSubscription(monitoringContext *monitoring.Contex
 		return es
 	}
 
-	_, er := stmt.Exec(subIdUUID, addProduct.Product, addProduct.Type, addProduct.Threshold, addProduct.Action)
+	_, er := stmt.ExecContext(monitoringContext, subIdUUID, addProduct.Product, addProduct.Type, addProduct.Threshold, addProduct.Action)
 	if er != nil {
 		return er
 	}

@@ -106,7 +106,7 @@ func logAccountActions(monitoringContext *monitoring.Context, w http.ResponseWri
 	}
 
 	for _, action := range actionList.Actions {
-		go logActionWithRecover(monitoringContext, action)
+		go logActionWithRecover(monitoring.GlobalContext, action)
 	}
 
 	w.WriteHeader(http.StatusOK)
