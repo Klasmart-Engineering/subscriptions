@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/cenkalti/backoff/v4"
-	_ "github.com/lib/pq"
+	_ "github.com/newrelic/go-agent/v3/integrations/nrpq"
 	"go.uber.org/zap"
 	"subscriptions/src/monitoring"
 	"time"
@@ -27,7 +27,7 @@ func Initialize(username, password, database, host string, port int) (Database, 
 			zap.Int("port", port))
 		dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 			host, port, username, password, database)
-		conn, err := sql.Open("postgres", dsn)
+		conn, err := sql.Open("nrpostgres", dsn)
 		if err != nil {
 			monitoring.GlobalContext.Error("Could not connect to database", zap.Error(err))
 			return err

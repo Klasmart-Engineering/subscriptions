@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
-	newrelic "github.com/newrelic/go-agent"
+	"github.com/newrelic/go-agent/v3/newrelic"
 	"go.uber.org/zap"
 	"net/http"
 	db "subscriptions/src/database"
@@ -17,28 +17,27 @@ func NewHandler(db db.Database, ctx *monitoring.Context) http.Handler {
 	router := chi.NewRouter()
 	dbInstance = db
 
-	newRelicApp := *monitoring.GlobalContext.NewRelic
-
 	router.Use(recovery)
 	router.MethodNotAllowed(methodNotAllowedHandler)
 	router.NotFound(notFoundHandler)
 	router.Get("/healthcheck", dbHealthcheck)
 	router.Get("/liveness", applicationLiveness)
-	router.Get(wrap(newRelicApp, ctx, "/subscription-types", getAllSubscriptionTypes))
-	router.Get(wrap(newRelicApp, ctx, "/subscription-actions", getAllSubscriptionActions))
-	router.Post(wrap(newRelicApp, ctx, "/log-action", logAccountAction))
-	router.Post(wrap(newRelicApp, ctx, "/log-actions", logAccountActions))
-	router.Post(wrap(newRelicApp, ctx, "/add-product", addProduct))
-	router.Get(wrap(newRelicApp, ctx, "/subscription/{accountId}", createOrGetSubscription))
-	router.Post(wrap(newRelicApp, ctx, "/deactivate/{id}", deactivateSubscription))
-	router.Post(wrap(newRelicApp, ctx, "/evaluate-subscriptions", evaluateSubscriptionsUsage))
+	router.Get(wrap(ctx, "/subscription-types", getAllSubscriptionTypes))
+	router.Get(wrap(ctx, "/subscription-actions", getAllSubscriptionActions))
+	router.Post(wrap(ctx, "/log-action", logAccountAction))
+	router.Post(wrap(ctx, "/log-actions", logAccountActions))
+	router.Post(wrap(ctx, "/add-product", addProduct))
+	router.Get(wrap(ctx, "/subscription/{accountId}", createOrGetSubscription))
+	router.Post(wrap(ctx, "/deactivate/{id}", deactivateSubscription))
+	router.Post(wrap(ctx, "/evaluate-subscriptions", evaluateSubscriptionsUsage))
 
 	return router
 }
 
-func wrap(newRelicApp newrelic.Application, ctx *monitoring.Context, pattern string, handler func(*monitoring.Context, http.ResponseWriter, *http.Request)) (string, func(http.ResponseWriter, *http.Request)) {
-	return newrelic.WrapHandleFunc(newRelicApp, pattern, func(w http.ResponseWriter, r *http.Request) {
+func wrap(ctx *monitoring.Context, pattern string, handler func(*monitoring.Context, http.ResponseWriter, *http.Request)) (string, func(http.ResponseWriter, *http.Request)) {
+	return newrelic.WrapHandleFunc(monitoring.GlobalContext.NewRelic, pattern, func(w http.ResponseWriter, r *http.Request) {
 		var monitoringContext = monitoring.NewMonitoringContext(ctx.Logger, r.Context())
+
 		monitoringContext.Info("Request started",
 			zap.String("method", r.Method),
 			zap.String("url", r.URL.String()))

@@ -16,7 +16,7 @@ import (
 )
 
 func evaluateSubscriptionsUsage(monitoringContext *monitoring.Context, w http.ResponseWriter, r *http.Request) {
-	subscriptions, err := dbInstance.SubscriptionsToProcess()
+	subscriptions, err := dbInstance.SubscriptionsToProcess(monitoringContext)
 	if err != nil {
 		render.Render(w, r, ServerErrorRenderer(err))
 		return
@@ -30,7 +30,7 @@ func evaluateSubscriptionsUsage(monitoringContext *monitoring.Context, w http.Re
 }
 
 func EvaluateSubscription(monitoringContext *monitoring.Context, subscriptionToEvaluate models.SubscriptionEvaluation) {
-	productToProductUsage, err := dbInstance.UsageOfSubscription(subscriptionToEvaluate)
+	productToProductUsage, err := dbInstance.UsageOfSubscription(monitoringContext, subscriptionToEvaluate)
 
 	if err != nil {
 		panic(err)
@@ -70,7 +70,7 @@ func applicationLiveness(w http.ResponseWriter, r *http.Request) {
 }
 
 func getAllSubscriptionTypes(monitoringContext *monitoring.Context, w http.ResponseWriter, r *http.Request) {
-	subscriptionTypes, err := dbInstance.GetSubscriptionTypes()
+	subscriptionTypes, err := dbInstance.GetSubscriptionTypes(monitoringContext)
 	if err != nil {
 		render.Render(w, r, ServerErrorRenderer(err))
 		return
@@ -81,7 +81,7 @@ func getAllSubscriptionTypes(monitoringContext *monitoring.Context, w http.Respo
 }
 
 func getAllSubscriptionActions(monitoringContext *monitoring.Context, w http.ResponseWriter, r *http.Request) {
-	subscriptionActions, err := dbInstance.GetAllSubscriptionActions()
+	subscriptionActions, err := dbInstance.GetAllSubscriptionActions(monitoringContext)
 	if err != nil {
 		render.Render(w, r, ServerErrorRenderer(err))
 		return
@@ -106,7 +106,7 @@ func logAccountActions(monitoringContext *monitoring.Context, w http.ResponseWri
 	}
 
 	for _, action := range actionList.Actions {
-		go logActionWithRecover(monitoringContext, action)
+		go logActionWithRecover(monitoring.GlobalContext, action)
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -127,7 +127,7 @@ func logAccountAction(monitoringContext *monitoring.Context, w http.ResponseWrit
 		return
 	}
 
-	var actionResponse = LogAction(accountAction)
+	var actionResponse = LogAction(monitoringContext, accountAction)
 
 	if err := render.Render(w, r, &actionResponse); err != nil {
 		render.Render(w, r, ErrorRenderer(err))
@@ -148,7 +148,7 @@ func addProduct(monitoringContext *monitoring.Context, w http.ResponseWriter, r 
 		return
 	}
 
-	err = AddProductToSubscription(product)
+	err = dbInstance.AddProductToSubscription(monitoringContext, product)
 
 	if err != nil {
 		render.Render(w, r, ErrorRenderer(err))
@@ -198,7 +198,7 @@ func createOrGetSubscription(monitoringContext *monitoring.Context, w http.Respo
 func deactivateSubscription(monitoringContext *monitoring.Context, w http.ResponseWriter, r *http.Request) {
 	subscriptionId := chi.URLParam(r, "id")
 	var inactiveState = 2 //Inactive
-	err := dbInstance.UpdateSubscriptionStatus(subscriptionId, inactiveState)
+	err := dbInstance.UpdateSubscriptionStatus(monitoringContext, subscriptionId, inactiveState)
 
 	if err != nil {
 		render.Render(w, r, ServerErrorRenderer(err))
@@ -211,11 +211,6 @@ func deactivateSubscription(monitoringContext *monitoring.Context, w http.Respon
 	}
 }
 
-func AddProductToSubscription(product models.AddProduct) error {
-	err := dbInstance.AddProductToSubscription(product)
-	return err
-}
-
 func logActionWithRecover(monitoringContext *monitoring.Context, action models.SubscriptionAccountAction) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -223,36 +218,36 @@ func logActionWithRecover(monitoringContext *monitoring.Context, action models.S
 		}
 	}()
 
-	logAction := LogAction(action)
+	logAction := LogAction(monitoringContext, action)
 	monitoringContext.Info(logAction.Details)
 }
 
-func LogAction(accountAction models.SubscriptionAccountAction) models.LogResponse {
+func LogAction(monitoringContext *monitoring.Context, accountAction models.SubscriptionAccountAction) models.LogResponse {
 
-	dbInstance.LogUserAction(accountAction)
-	interactions, err := dbInstance.CountInteractionsForSubscription(accountAction)
+	dbInstance.LogUserAction(monitoringContext, accountAction)
+	interactions, err := dbInstance.CountInteractionsForSubscription(monitoringContext, accountAction)
 	if err != nil {
 		panic(err)
 	}
 
-	threshold, er := dbInstance.GetThresholdForSubscriptionProduct(accountAction)
+	threshold, er := dbInstance.GetThresholdForSubscriptionProduct(monitoringContext, accountAction)
 	if er != nil {
 		panic(er)
 	}
 
-	active, err := dbInstance.IsSubscriptionActive(accountAction.SubscriptionId)
+	active, err := dbInstance.IsSubscriptionActive(monitoringContext, accountAction.SubscriptionId)
 
 	if err != nil {
 		panic(err)
 	}
 
 	if !active {
-		dbInstance.UpdateChargeableLog(accountAction)
+		dbInstance.UpdateChargeableLog(monitoringContext, accountAction)
 		return models.LogResponse{Success: false, Details: "BLOCKED. Subscription not active", Count: interactions, Limit: threshold}
 	}
 
 	if threshold != 0 && interactions > threshold {
-		dbInstance.UpdateChargeableLog(accountAction)
+		dbInstance.UpdateChargeableLog(monitoringContext, accountAction)
 		return models.LogResponse{Success: false, Details: "BLOCKED", Count: interactions, Limit: threshold}
 	}
 

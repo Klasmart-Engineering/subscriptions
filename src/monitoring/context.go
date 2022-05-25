@@ -2,8 +2,9 @@ package monitoring
 
 import (
 	"context"
-	newrelic "github.com/newrelic/go-agent"
+	newrelic "github.com/newrelic/go-agent/v3/newrelic"
 	"go.uber.org/zap"
+	"subscriptions/src/config"
 )
 
 const (
@@ -21,6 +22,17 @@ type Context struct {
 	context.Context
 	*zap.Logger
 	NewRelic *newrelic.Application
+}
+
+func SetupGlobalMonitoringContext(ctx context.Context) {
+	var l *zap.Logger
+	if config.GetConfig().Logging.DevelopmentLogger {
+		l, _ = zap.NewDevelopment()
+	} else {
+		l, _ = zap.NewProduction()
+	}
+
+	GlobalContext = NewMonitoringContext(l, ctx)
 }
 
 func NewMonitoringContext(logger *zap.Logger, context context.Context) *Context {
