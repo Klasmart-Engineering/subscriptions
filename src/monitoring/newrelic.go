@@ -5,13 +5,9 @@ import (
 	"github.com/newrelic/go-agent/_integrations/nrzap"
 )
 
-type NewRelic struct {
-	serviceName string
-	cfg         newrelic.Config
-	App         newrelic.Application
-}
+var newRelicApplication *newrelic.Application
 
-func GetNewRelic(serviceName string, licenseKey string, enabled, tracerEnabled, spanEventsEnabled, errorCollectorEnabled bool) (*NewRelic, error) {
+func SetupNewRelic(serviceName string, licenseKey string, enabled, tracerEnabled, spanEventsEnabled, errorCollectorEnabled bool) {
 	cfg := newrelic.NewConfig(serviceName, licenseKey)
 	cfg.Enabled = enabled
 	cfg.DistributedTracer.Enabled = tracerEnabled
@@ -25,9 +21,6 @@ func GetNewRelic(serviceName string, licenseKey string, enabled, tracerEnabled, 
 		panic("Failed to setup NewRelic: " + err.Error())
 	}
 
-	return &NewRelic{
-		serviceName: serviceName,
-		cfg:         cfg,
-		App:         app,
-	}, nil
+	newRelicApplication = &app
+	GlobalContext.NewRelic = &app
 }

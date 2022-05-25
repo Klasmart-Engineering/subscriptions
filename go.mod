@@ -9,7 +9,6 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/lib/pq v1.10.5
 	github.com/newrelic/go-agent v3.15.2+incompatible
-	github.com/prometheus/client_golang v1.12.2
 	github.com/stretchr/testify v1.7.1
 	go.uber.org/zap v1.21.0
 )

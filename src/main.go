@@ -42,14 +42,14 @@ func startServer(ctx context.Context) {
 	database := setupDatabase()
 	defer database.Conn.Close()
 
-	newRelic, _ := monitoring.GetNewRelic(activeConfig.NewRelicConfig.EntityName,
+	monitoring.SetupNewRelic(activeConfig.NewRelicConfig.EntityName,
 		activeConfig.NewRelicConfig.LicenseKey,
 		activeConfig.NewRelicConfig.Enabled,
 		activeConfig.NewRelicConfig.TracerEnabled,
 		activeConfig.NewRelicConfig.SpanEventEnabled,
 		activeConfig.NewRelicConfig.ErrorCollectorEnabled)
 
-	httpHandler := handler.NewHandler(database, newRelic.App, monitoringContext)
+	httpHandler := handler.NewHandler(database, monitoringContext)
 
 	server := &http.Server{
 		Handler: httpHandler,

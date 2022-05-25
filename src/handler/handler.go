@@ -5,7 +5,6 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
 	newrelic "github.com/newrelic/go-agent"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 	"net/http"
 	db "subscriptions/src/database"
@@ -14,15 +13,17 @@ import (
 
 var dbInstance db.Database
 
-func NewHandler(db db.Database, newRelicApp newrelic.Application, ctx *monitoring.Context) http.Handler {
+func NewHandler(db db.Database, ctx *monitoring.Context) http.Handler {
 	router := chi.NewRouter()
 	dbInstance = db
+
+	newRelicApp := *monitoring.GlobalContext.NewRelic
+
 	router.Use(recovery)
 	router.MethodNotAllowed(methodNotAllowedHandler)
 	router.NotFound(notFoundHandler)
 	router.Get("/healthcheck", dbHealthcheck)
 	router.Get("/liveness", applicationLiveness)
-	router.Handle("/metrics", promhttp.Handler())
 	router.Get(wrap(newRelicApp, ctx, "/subscription-types", getAllSubscriptionTypes))
 	router.Get(wrap(newRelicApp, ctx, "/subscription-actions", getAllSubscriptionActions))
 	router.Post(wrap(newRelicApp, ctx, "/log-action", logAccountAction))

@@ -20,12 +20,14 @@ var GlobalContext *Context
 type Context struct {
 	context.Context
 	*zap.Logger
+	NewRelic *newrelic.Application
 }
 
 func NewMonitoringContext(logger *zap.Logger, context context.Context) *Context {
 	return &Context{
-		Context: context,
-		Logger:  logger.With(keyAndValueFromContext(context)...),
+		Context:  context,
+		Logger:   logger.With(keyAndValueFromContext(context)...),
+		NewRelic: newRelicApplication,
 	}
 }
 
