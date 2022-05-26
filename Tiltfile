@@ -18,3 +18,6 @@ k8s_yaml('./environment/local/postgres.yaml')
 k8s_yaml('./environment/local/cronjob.yaml')
 k8s_resource('go-app', labels=['subscriptions'], port_forwards=['8000:8080', '40002:40000'], resource_deps=['postgres'])
 k8s_resource('postgres', labels=['subscriptions'], port_forwards=5432)
+
+k8s_yaml('./environment/local/localstack.yaml')
+k8s_resource('localstack', labels=['localstack'], port_forwards=['4566:4566'])

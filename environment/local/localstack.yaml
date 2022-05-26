@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: localstack
+spec:
+  selector:
+    matchLabels:
+      app: localstack
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: localstack
+    spec:
+      containers:
+        - name: localstack
+          image: localstack/localstack:0.14.3
+          ports:
+            - containerPort: 4566
+          env:
+            - name: SERVICES
+              value: "kinesis"
+            - name: EAGER_SERVICE_LOADING
+              value: "true"
+          volumeMounts:
+            - name: init-volume
+              mountPath: /docker-entrypoint-initaws.d
+              readonly: true
+      volumes:
+        - name: init-volume
+          configMap:
+            name: localstack-init
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    service: localstack
+  name: localstack-webui
+  namespace: subscriptions
+spec:
+  ports:
+    - protocol: TCP
+      name: "localstack"
+      port: 4566
+      targetPort: 4566
+  selector:
+    app: localstack
+status:
+  loadBalancer: {}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: localstack-init
+  namespace: subscriptions
+data:
+  setup.sh: |
+    set -x
+    awslocal kinesis create-stream --region eu-west-1 --stream-name factory-gateway-access --shard-count  1
+    set +x
