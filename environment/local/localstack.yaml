@@ -36,7 +36,7 @@ kind: Service
 metadata:
   labels:
     service: localstack
-  name: localstack-webui
+  name: localstack
   namespace: subscriptions
 spec:
   ports:
