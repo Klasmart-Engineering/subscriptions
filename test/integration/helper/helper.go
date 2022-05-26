@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/cenkalti/backoff/v4"
 	"log"
+	"net/http"
 	"os"
 	db "subscriptions/test/integration/db"
 	"testing"
@@ -99,5 +100,30 @@ func initIfNeeded() {
 		}
 
 		connection = &conn
+	}
+}
+
+func WaitForHealthcheck(t *testing.T) {
+	var check = func() error {
+		_, err := http.Get("http://localhost:8020/healthcheck")
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	err := backoff.Retry(check, &backoff.ExponentialBackOff{
+		InitialInterval:     100 * time.Millisecond,
+		RandomizationFactor: 0.5,
+		Multiplier:          1.2,
+		MaxInterval:         1 * time.Second,
+		MaxElapsedTime:      5 * time.Second,
+		Stop:                -1,
+		Clock:               backoff.SystemClock,
+	})
+
+	if err != nil {
+		t.Fatal(err)
 	}
 }

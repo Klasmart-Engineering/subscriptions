@@ -11,6 +11,7 @@ import (
 
 func TestGetSubscriptionActionsReturnsCorrectActions(t *testing.T) {
 	helper.ResetDatabase()
+	helper.WaitForHealthcheck(t)
 
 	resp, err := http.Get("http://localhost:8020/subscription-actions")
 	if err != nil {

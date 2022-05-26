@@ -12,6 +12,7 @@ import (
 
 func TestLogAccountActionInvalidBodyReturns400(t *testing.T) {
 	helper.ResetDatabase()
+	helper.WaitForHealthcheck(t)
 
 	resp, err := http.Post("http://localhost:8020/log-action", "application/json", bytes.NewBuffer([]byte("malformed")))
 	if err != nil {
@@ -24,6 +25,7 @@ func TestLogAccountActionInvalidBodyReturns400(t *testing.T) {
 func TestInactiveSubscriptionReturnsUnsuccessfulResponse(t *testing.T) {
 	helper.ResetDatabase()
 	helper.RunTestSetupScript("inactive-subscription.sql")
+	helper.WaitForHealthcheck(t)
 
 	var request = models.SubscriptionAccountAction{
 		SubscriptionId:       "2f797c16-053e-41ab-b40d-24356480e61e",
@@ -59,6 +61,7 @@ func TestInactiveSubscriptionReturnsUnsuccessfulResponse(t *testing.T) {
 func TestDisabledSubscriptionReturnsUnsuccessfulResponse(t *testing.T) {
 	helper.ResetDatabase()
 	helper.RunTestSetupScript("disabled-subscription.sql")
+	helper.WaitForHealthcheck(t)
 
 	var request = models.SubscriptionAccountAction{
 		SubscriptionId:       "2f797c16-053e-41ab-b40d-24356480e61e",
@@ -94,6 +97,7 @@ func TestDisabledSubscriptionReturnsUnsuccessfulResponse(t *testing.T) {
 func TestActiveSubscriptionOverThresholdReturnsBlockedResponse(t *testing.T) {
 	helper.ResetDatabase()
 	helper.RunTestSetupScript("over-threshold-subscription.sql")
+	helper.WaitForHealthcheck(t)
 
 	var request = models.SubscriptionAccountAction{
 		SubscriptionId:       "2f797c16-053e-41ab-b40d-24356480e61e",
@@ -129,6 +133,7 @@ func TestActiveSubscriptionOverThresholdReturnsBlockedResponse(t *testing.T) {
 func TestActiveSubscriptionBelowThresholdReturnsWithinLimitResponse(t *testing.T) {
 	helper.ResetDatabase()
 	helper.RunTestSetupScript("within-threshold-subscription.sql")
+	helper.WaitForHealthcheck(t)
 
 	var request = models.SubscriptionAccountAction{
 		SubscriptionId:       "2f797c16-053e-41ab-b40d-24356480e61e",

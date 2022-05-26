@@ -12,6 +12,7 @@ import (
 
 func TestLogBulkActionsInvalidBodyReturns400(t *testing.T) {
 	helper.ResetDatabase()
+	helper.WaitForHealthcheck(t)
 
 	resp, err := http.Post("http://localhost:8020/log-actions", "application/json", bytes.NewBuffer([]byte("malformed")))
 	if err != nil {
@@ -24,6 +25,7 @@ func TestLogBulkActionsInvalidBodyReturns400(t *testing.T) {
 func TestLogBulkActionsPersistsAllEntriesToDatabase(t *testing.T) {
 	helper.ResetDatabase()
 	helper.RunTestSetupScript("bulk-actions-log.sql")
+	helper.WaitForHealthcheck(t)
 
 	var request = models.SubscriptionAccountActionList{
 		Actions: []models.SubscriptionAccountAction{

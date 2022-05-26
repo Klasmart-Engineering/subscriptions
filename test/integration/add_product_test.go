@@ -12,6 +12,7 @@ import (
 
 func TestAddProductInvalidBodyReturns400(t *testing.T) {
 	helper.ResetDatabase()
+	helper.WaitForHealthcheck(t)
 
 	resp, err := http.Post("http://localhost:8020/add-product", "application/json", bytes.NewBuffer([]byte("malformed")))
 	if err != nil {
@@ -24,6 +25,7 @@ func TestAddProductInvalidBodyReturns400(t *testing.T) {
 func TestAddProductToSubscriptionSucceeds(t *testing.T) {
 	helper.ResetDatabase()
 	helper.RunTestSetupScript("add-product-to-subscription.sql")
+	helper.WaitForHealthcheck(t)
 
 	var request = models.AddProduct{
 		SubscriptionId: "2f797c16-053e-41ab-b40d-24356480e61e",

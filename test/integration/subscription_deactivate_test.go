@@ -13,6 +13,8 @@ import (
 
 func TestDeactivateSubscriptionReturnsSubscriptionUuid(t *testing.T) {
 	helper.ResetDatabase()
+	helper.WaitForHealthcheck(t)
+
 	accountId, err := uuid2.NewUUID()
 	resp, err := http.Get("http://localhost:8020/subscription/" + accountId.String())
 	if err != nil {
