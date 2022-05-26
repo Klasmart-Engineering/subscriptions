@@ -5,6 +5,11 @@ on:
       - v*
   pull_request:
 
+permissions:
+  id-token: write
+  contents: read
+  packages: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -20,9 +25,22 @@ jobs:
       run: ./run-integration-tests.sh
   build-push-docker-image:
     if: startsWith(github.ref, 'refs/tags/v')
+    needs: test
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - name: Log in to the Container registry
+      uses: docker/login-action@v1
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Get tag
+      run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
     - name: Build and push docker image
-      run: echo test123
-
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        push: true
+        tags: ${{ env.RELEASE_VERSION }}
+        file: ./Dockerfile
