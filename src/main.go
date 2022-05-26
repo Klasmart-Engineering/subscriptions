@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"subscriptions/src/aws"
 	"subscriptions/src/config"
 	db "subscriptions/src/database"
 	"subscriptions/src/handler"
@@ -32,6 +33,8 @@ func startServer(ctx context.Context) {
 		activeConfig.NewRelicConfig.LicenseKey,
 		activeConfig.NewRelicConfig.Enabled,
 		activeConfig.NewRelicConfig.TracerEnabled)
+
+	aws.SetupAWS()
 
 	monitoring.GlobalContext.Info("Starting Server",
 		zap.String("profile", config.GetProfileName()),

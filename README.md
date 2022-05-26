@@ -109,11 +109,7 @@ Localstack (https://github.com/localstack/localstack) is used in K3D to provide 
    Default region name [None]: eu-west-1
    Default output format [None]: json
    ```
- - Add to your HOSTS file
-   ```
-   127.0.0.1 localhost.localstack.cloud
-   ```
  - Include an --endpoint-url argument with your commands, e.g. 
    ```
-   aws --endpoint-url https://localhost.localstack.cloud:4566 kinesis list-streams
+   aws --endpoint-url http://localhost:4566 kinesis list-streams
    ```

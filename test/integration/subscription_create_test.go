@@ -11,6 +11,7 @@ import (
 )
 
 func TestCreateSubscriptionWithNewAccountIdReturnsActiveSubscription(t *testing.T) {
+	helper.WaitForHealthcheck(t)
 
 	accountId, err := uuid2.NewUUID()
 	helper.ResetDatabase()

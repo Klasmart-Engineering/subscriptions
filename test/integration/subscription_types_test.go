@@ -11,6 +11,7 @@ import (
 
 func TestGetSubscriptionTypesReturnsCorrectTypes(t *testing.T) {
 	helper.ResetDatabase()
+	helper.WaitForHealthcheck(t)
 
 	resp, err := http.Get("http://localhost:8020/subscription-types")
 	if err != nil {
