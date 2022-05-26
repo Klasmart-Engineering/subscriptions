@@ -18,6 +18,7 @@ type config struct {
 	Logging        loggingConfig
 	Database       databaseConfig
 	NewRelicConfig newRelicConfig
+	AwsConfig      awsConfig
 }
 
 type serverConfig struct {
@@ -41,6 +42,13 @@ type databaseConfig struct {
 	User         string
 	Password     string
 	DatabaseName string
+}
+
+type awsConfig struct {
+	Region          string
+	AccessKeyId     string
+	AccessKeySecret string
+	Endpoint        *string
 }
 
 func LoadProfile(name string) {
