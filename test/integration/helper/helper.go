@@ -118,7 +118,7 @@ func WaitForHealthcheck(t *testing.T) {
 		RandomizationFactor: 0.5,
 		Multiplier:          1.2,
 		MaxInterval:         1 * time.Second,
-		MaxElapsedTime:      5 * time.Second,
+		MaxElapsedTime:      30 * time.Second,
 		Stop:                -1,
 		Clock:               backoff.SystemClock,
 	})
