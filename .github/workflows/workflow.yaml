@@ -19,7 +19,7 @@ jobs:
     - name: Run integration tests
       run: ./run-integration-tests.sh
   build-push-docker-image:
-    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
