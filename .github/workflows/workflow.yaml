@@ -44,5 +44,5 @@ jobs:
       with:
         context: .
         push: true
-        tags: ${{ env.RELEASE_VERSION }}
+        tags: ghcr.io/KL-Engineering/subscriptions:${{ env.RELEASE_VERSION }}
         file: ./Dockerfile
