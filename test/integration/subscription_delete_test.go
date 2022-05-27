@@ -11,7 +11,7 @@ import (
 	"testing"
 )
 
-func TestDeactivateSubscriptionReturnsSubscriptionUuid(t *testing.T) {
+func TestDeleteSubscriptionReturnsSubscriptionDeleted(t *testing.T) {
 	helper.ResetDatabase()
 	helper.WaitForHealthcheck(t)
 
@@ -34,20 +34,20 @@ func TestDeactivateSubscriptionReturnsSubscriptionUuid(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	resp, err = http.Post("http://localhost:8020/deactivate/"+id, "application/json", bytes.NewBuffer([]byte("")))
+	resp, err = http.Post("http://localhost:8020/delete/"+id, "application/json", bytes.NewBuffer([]byte("")))
 
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	var deletedResponseBody models.GenericResponse
+	var deactivateResponseBody models.GenericResponse
 
-	err = json.NewDecoder(resp.Body).Decode(&deletedResponseBody)
+	err = json.NewDecoder(resp.Body).Decode(&deactivateResponseBody)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	var expectedResponse = models.GenericResponse{Details: "Subscription deactivated."}
+	var expectedResponse = models.GenericResponse{Details: "Subscription deleted."}
 
-	require.Equal(t, expectedResponse, deletedResponseBody)
+	require.Equal(t, expectedResponse, deactivateResponseBody)
 }
