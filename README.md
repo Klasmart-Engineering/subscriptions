@@ -113,3 +113,10 @@ Localstack (https://github.com/localstack/localstack) is used in K3D to provide 
    ```
    aws --endpoint-url http://localhost:4566 kinesis list-streams
    ```
+
+#### Doc Generation
+see generate_docs.go & https://goswagger.io/use/spec/meta.html
+to generate and run docs 
+   ```
+   make serve-docs
+   ```

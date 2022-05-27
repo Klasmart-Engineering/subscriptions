@@ -17,6 +17,7 @@ func NewHandler(db db.Database, ctx *monitoring.Context) http.Handler {
 	router := chi.NewRouter()
 	dbInstance = db
 
+	//NOTE: Please add Documentation generation information in generate_docs.go
 	router.Use(recovery)
 	router.MethodNotAllowed(methodNotAllowedHandler)
 	router.NotFound(notFoundHandler)
