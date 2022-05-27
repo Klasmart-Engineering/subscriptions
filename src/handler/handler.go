@@ -30,6 +30,7 @@ func NewHandler(db db.Database, ctx *monitoring.Context) http.Handler {
 	router.Post(wrap(ctx, "/add-product", addProduct))
 	router.Get(wrap(ctx, "/subscription/{accountId}", createOrGetSubscription))
 	router.Post(wrap(ctx, "/deactivate/{id}", deactivateSubscription))
+	router.Post(wrap(ctx, "/delete/{id}", deleteSubscription))
 	router.Post(wrap(ctx, "/evaluate-subscriptions", evaluateSubscriptionsUsage))
 
 	return router

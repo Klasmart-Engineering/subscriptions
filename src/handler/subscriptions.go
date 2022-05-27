@@ -211,6 +211,22 @@ func deactivateSubscription(monitoringContext *monitoring.Context, w http.Respon
 	}
 }
 
+func deleteSubscription(monitoringContext *monitoring.Context, w http.ResponseWriter, r *http.Request) {
+	subscriptionId := chi.URLParam(r, "id")
+	var inactiveState = 3 //Deleted
+	err := dbInstance.UpdateSubscriptionStatus(monitoringContext, subscriptionId, inactiveState)
+
+	if err != nil {
+		render.Render(w, r, ServerErrorRenderer(err))
+		return
+	}
+
+	response := models.GenericResponse{Details: "Subscription deleted."}
+	if err := render.Render(w, r, &response); err != nil {
+		render.Render(w, r, ErrorRenderer(err))
+	}
+}
+
 func logActionWithRecover(monitoringContext *monitoring.Context, action models.SubscriptionAccountAction) {
 	defer func() {
 		if r := recover(); r != nil {
