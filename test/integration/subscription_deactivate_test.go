@@ -40,14 +40,14 @@ func TestDeactivateSubscriptionReturnsSubscriptionUuid(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var deactivateResponseBody models.GenericResponse
+	var deletedResponseBody models.GenericResponse
 
-	err = json.NewDecoder(resp.Body).Decode(&deactivateResponseBody)
+	err = json.NewDecoder(resp.Body).Decode(&deletedResponseBody)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	var expectedResponse = models.GenericResponse{Details: "Subscription deactivated."}
 
-	require.Equal(t, expectedResponse, deactivateResponseBody)
+	require.Equal(t, expectedResponse, deletedResponseBody)
 }
