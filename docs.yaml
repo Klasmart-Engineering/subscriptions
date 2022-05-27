@@ -1,0 +1,305 @@
+basePath: /
+consumes:
+- application/json
+definitions:
+  AddProduct:
+    properties:
+      SubscriptionId:
+        type: string
+      action:
+        type: string
+        x-go-name: Action
+      product:
+        type: string
+        x-go-name: Product
+      threshold:
+        format: int64
+        type: integer
+        x-go-name: Threshold
+      type:
+        type: string
+        x-go-name: Type
+    type: object
+    x-go-package: subscriptions/src/models
+  GenericResponse:
+    properties:
+      details:
+        type: string
+        x-go-name: Details
+    type: object
+    x-go-package: subscriptions/src/models
+  Healthcheck:
+    properties:
+      details:
+        type: string
+        x-go-name: Details
+      up:
+        type: boolean
+        x-go-name: Up
+    type: object
+    x-go-package: subscriptions/src/models
+  LogResponse:
+    properties:
+      count:
+        format: int64
+        type: integer
+        x-go-name: Count
+      details:
+        type: string
+        x-go-name: Details
+      limit:
+        format: int64
+        type: integer
+        x-go-name: Limit
+      success:
+        type: boolean
+        x-go-name: Success
+    type: object
+    x-go-package: subscriptions/src/models
+  ProductResponse:
+    properties:
+      details:
+        type: string
+        x-go-name: Details
+    type: object
+    x-go-package: subscriptions/src/models
+  SubscriptionAccountAction:
+    properties:
+      SubscriptionId:
+        type: string
+      actionType:
+        type: string
+        x-go-name: ActionType
+      interactionTimeEpoch:
+        type: string
+        x-go-name: InteractionTimeEpoch
+      product:
+        type: string
+        x-go-name: Product
+      usageAmount:
+        format: int64
+        type: integer
+        x-go-name: UsageAmount
+    type: object
+    x-go-package: subscriptions/src/models
+  SubscriptionAccountActionList:
+    properties:
+      actions:
+        items:
+          $ref: '#/definitions/SubscriptionAccountAction'
+        type: array
+        x-go-name: Actions
+    type: object
+    x-go-package: subscriptions/src/models
+  SubscriptionAction:
+    properties:
+      description:
+        type: string
+        x-go-name: Description
+      name:
+        type: string
+        x-go-name: Name
+      unit:
+        type: string
+        x-go-name: Unit
+    type: object
+    x-go-package: subscriptions/src/models
+  SubscriptionActionList:
+    properties:
+      actions:
+        items:
+          $ref: '#/definitions/SubscriptionAction'
+        type: array
+        x-go-name: Actions
+    type: object
+    x-go-package: subscriptions/src/models
+  SubscriptionResponse:
+    properties:
+      active:
+        type: boolean
+        x-go-name: Active
+      subscriptionId:
+        type: string
+        x-go-name: SubscriptionId
+    type: object
+    x-go-package: subscriptions/src/models
+  SubscriptionType:
+    properties:
+      id:
+        format: int64
+        type: integer
+        x-go-name: ID
+      name:
+        type: string
+        x-go-name: Name
+    type: object
+    x-go-package: subscriptions/src/models
+  SubscriptionTypeList:
+    properties:
+      subscriptions:
+        items:
+          $ref: '#/definitions/SubscriptionType'
+        type: array
+        x-go-name: Subscriptions
+    type: object
+    x-go-package: subscriptions/src/models
+host: some-url.com
+info:
+  description: Documentation of our awesome Subscription API.
+  title: Subscription Service.
+  version: 1.0.0
+paths:
+  /add-product:
+    post:
+      description: Log actions with API
+      operationId: addProductEndpoint
+      parameters:
+      - description: Request containing information about product to add
+        in: body
+        name: Body
+        schema:
+          $ref: '#/definitions/AddProduct'
+      responses:
+        "200":
+          $ref: '#/responses/ProductResponse'
+      tags:
+      - add-product
+  /deactivate/{id}:
+    post:
+      description: Log actions with API
+      operationId: deactivateSubscriptionEndpoint
+      parameters:
+      - description: Request containing information about product to add
+        in: body
+        name: Body
+        schema:
+          type: string
+      responses:
+        "200":
+          $ref: '#/responses/ProductResponse'
+      tags:
+      - deactivate-subscription
+  /evaluate-subscriptions:
+    post:
+      description: Evaluate Subscription usage. Used for periodic processing of subscriptions
+        usage
+      operationId: evaluateSubscriptionsEndpoint
+      responses:
+        "200":
+          description: ""
+      tags:
+      - evaluate-subscriptions
+  /healthcheck:
+    get:
+      description: Application Healthcheck. Checking database connection and used
+        by readiness probe
+      operationId: healthcheckEndpoint
+      responses:
+        "200":
+          $ref: '#/responses/Healthcheck'
+      tags:
+      - application-healthcheck
+  /liveness:
+    get:
+      description: Application Liveness. Checking the application is responsive. Used
+        by the liveness probe
+      operationId: livenessEndpoint
+      responses:
+        "200":
+          $ref: '#/responses/Healthcheck'
+      tags:
+      - application-liveness
+  /log-action:
+    post:
+      description: Log action with API
+      operationId: logActionEndpoint
+      parameters:
+      - description: Request containing information about the API interaction
+        in: body
+        name: Body
+        schema:
+          $ref: '#/definitions/SubscriptionAccountAction'
+      responses:
+        "200":
+          $ref: '#/responses/LogResponse'
+      tags:
+      - log-action
+  /log-actions:
+    post:
+      description: Log actions with API
+      operationId: logActionsEndpoint
+      parameters:
+      - description: Request containing information about the API interactions
+        in: body
+        name: Body
+        schema:
+          $ref: '#/definitions/SubscriptionAccountActionList'
+      responses:
+        "200":
+          description: ""
+      tags:
+      - log-actions
+  /subscription-actions:
+    get:
+      operationId: subscriptionActionsEndpoint
+      responses:
+        "200":
+          description: SubscriptionActionList
+          schema:
+            $ref: '#/definitions/SubscriptionActionList'
+      summary: List the action types for subscriptions.
+      tags:
+      - subscription-actions
+  /subscription-types:
+    get:
+      operationId: subscriptionTypesEndpoint
+      responses:
+        "200":
+          description: SubscriptionTypeList
+          schema:
+            $ref: '#/definitions/SubscriptionTypeList'
+      summary: List the type of subscriptions.
+      tags:
+      - subscription-types
+  /subscription/{accountID}:
+    get:
+      description: Get or create subscription
+      operationId: getOrCreateSubscriptionEndpoint
+      responses:
+        "200":
+          $ref: '#/responses/models.SubscriptionResponse'
+produces:
+- application/json
+responses:
+  Healthcheck:
+    description: Healthcheck Response containing status information.
+    schema:
+      $ref: '#/definitions/Healthcheck'
+  Liveness:
+    description: Liveness Response containing status information.
+    schema:
+      $ref: '#/definitions/Healthcheck'
+  LogResponse:
+    description: Response containing request count and limit information.
+    schema:
+      $ref: '#/definitions/LogResponse'
+  ProductResponse:
+    description: Response containing details about product addition.
+    schema:
+      $ref: '#/definitions/GenericResponse'
+  evaluateSubscriptionResponsesWrapper:
+    description: Response for evaluate subscriptions
+  getSubscriptionResponsesWrapper:
+    description: Response for evaluate subscriptions
+    schema:
+      $ref: '#/definitions/SubscriptionResponse'
+  subscriptionTypes:
+    description: List of subscription actions.
+    schema:
+      $ref: '#/definitions/SubscriptionActionList'
+schemes:
+- http
+securityDefinitions:
+  basic:
+    type: basic
+swagger: "2.0"

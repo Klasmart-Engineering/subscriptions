@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	_ "github.com/pdrum/swagger-automation/docs" // This line is necessary for go-swagger to find the docs!
 	"go.uber.org/zap"
 	"net"
 	"net/http"
