@@ -97,23 +97,6 @@ Add `-profile=profile-name` to the command line or `PROFILE=profile-name` as an 
 
 Values can be overriden by environment variables by using an underscore to traverse the JSON structure, e.g. `SERVER_PORT=1234` will override the Server.Port config value.
 
-##### Localstack
-
-Localstack (https://github.com/localstack/localstack) is used in K3D to provide local versions of some AWS services.  To interact with it:
-
- - Install the AWS CLI: https://aws.amazon.com/cli/
- - Run `aws configure`, enter:
-   ```
-   AWS Access Key ID [None]: bla
-   AWS Secret Access Key [None]: bla
-   Default region name [None]: eu-west-1
-   Default output format [None]: json
-   ```
- - Include an --endpoint-url argument with your commands, e.g. 
-   ```
-   aws --endpoint-url http://localhost:4566 kinesis list-streams
-   ```
-
 #### Doc Generation
 see generate_docs.go & https://goswagger.io/use/spec/meta.html
 to generate and run docs 
