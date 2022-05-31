@@ -58,7 +58,7 @@ func methodNotAllowedHandler(w http.ResponseWriter, r *http.Request) {
 
 func notFoundHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
-	w.WriteHeader(400)
+	w.WriteHeader(404)
 	render.Render(w, r, ErrNotFound)
 }
 
