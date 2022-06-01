@@ -1,0 +1,11 @@
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: "subscriptions"
+  description: "subscriptions-go-api"
+spec:
+  type: openapi
+  lifecycle: production
+  owner: "lewis.callan@kidsloop.live"
+  definition:
+    $text: https://github.com/KL-Engineering/subscriptions/blob/main/docs.yaml
