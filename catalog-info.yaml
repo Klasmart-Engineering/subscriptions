@@ -1,0 +1,12 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: "subscriptions"
+  description: "subscriptions-go-api"
+  annotations:
+    github.com/project-slug: KL-Engineering/subscriptions
+    backstage.io/techdocs-ref: dir:.
+spec:
+  type: service
+  lifecycle: production
+  owner: "lewis.callan@kidsloop.live"
