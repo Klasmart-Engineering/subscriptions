@@ -2,51 +2,15 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 	"subscriptions/src/models"
 	"subscriptions/src/monitoring"
-	"time"
 )
-
-func evaluateSubscriptionsUsage(monitoringContext *monitoring.Context, w http.ResponseWriter, r *http.Request) {
-	subscriptions, err := dbInstance.SubscriptionsToProcess(monitoringContext)
-	if err != nil {
-		render.Render(w, r, ServerErrorRenderer(err))
-		return
-	}
-
-	for _, subscriptionToEvaluate := range subscriptions.SubscriptionEvaluations {
-		EvaluateSubscription(monitoringContext, subscriptionToEvaluate)
-	}
-
-	// do this as part of a transaction
-}
-
-func EvaluateSubscription(monitoringContext *monitoring.Context, subscriptionToEvaluate models.SubscriptionEvaluation) {
-	productToProductUsage, err := dbInstance.UsageOfSubscription(monitoringContext, subscriptionToEvaluate)
-
-	if err != nil {
-		panic(err)
-	}
-
-	now := time.Now()
-	var prods []models.EvaluatedSubscriptionProduct
-	for product, usage := range productToProductUsage {
-		prods = append(prods, models.EvaluatedSubscriptionProduct{Name: product.Name, Type: product.Type, UsageAmount: usage})
-	}
-	var evaluatedSubscription = models.EvaluatedSubscription{SubscriptionId: subscriptionToEvaluate.ID, Products: prods, DateFromEpoch: subscriptionToEvaluate.LastProcessedTime, DateToEpoch: strconv.FormatInt(now.Unix(), 10)}
-
-	//TODO revert this back to putting on a topic
-	monitoringContext.Info(fmt.Sprint(evaluatedSubscription))
-	dbInstance.UpdateLastProcessed(monitoringContext, &subscriptionToEvaluate)
-}
 
 func dbHealthcheck(w http.ResponseWriter, r *http.Request) {
 	up, err := dbInstance.Healthcheck()
