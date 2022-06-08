@@ -1,0 +1,33 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: Subscriptions Service
+  description: A service that deals with access to the KL platform
+paths:
+  /healthcheck:
+    get:
+      description: Returns whether the application is healthy (connected to dependencies)
+      responses:
+        "200":
+          $ref: '#/components/responses/ApplicationStateResponse'
+  /liveness:
+    get:
+      description: Returns whether the application is running
+      responses:
+        "200":
+          $ref: '#/components/responses/ApplicationStateResponse'
+components:
+  responses:
+    ApplicationStateResponse:
+      description: Successful healthcheck or liveness response
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - up
+            properties:
+              up:
+                type: boolean
+              details:
+                type: string

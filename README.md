@@ -91,8 +91,24 @@ Or to debug the instance in K3D, connect to port 40002 instead.
   ./run-integration-tests.sh
 ```
 
-##### Profiles
+### Profiles
 
 Add `-profile=profile-name` to the command line or `PROFILE=profile-name` as an environment variable to select a profile when running.  The config is then loaded from the relevant json file in the profiles directory.
 
 Values can be overriden by environment variables by using an underscore to traverse the JSON structure, e.g. `SERVER_PORT=1234` will override the Server.Port config value.
+
+### Open API
+
+Endpoint boilerplate is generated from openapi-spec.yaml.
+
+Install tooling:
+```
+go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest
+```
+
+Regenerate boilerplate:
+```
+oapi-codegen -package api openapi-spec.yaml > ./src/api/api.gen.go
+```
+
+Note that api.gen.go is in .gitignore - this is deliberate.

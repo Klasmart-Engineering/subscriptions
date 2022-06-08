@@ -2,19 +2,18 @@ package main
 
 import (
 	"context"
+	"github.com/labstack/echo/v4"
 	_ "github.com/pdrum/swagger-automation/docs" // This line is necessary for go-swagger to find the docs!
 	"go.uber.org/zap"
-	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
+	"subscriptions/src/api"
 	"subscriptions/src/config"
 	db "subscriptions/src/database"
-	"subscriptions/src/handler"
 	"subscriptions/src/monitoring"
 	"subscriptions/src/utils"
-	"syscall"
 	"time"
 )
 
@@ -41,33 +40,22 @@ func startServer(ctx context.Context) {
 		zap.String("profile", config.GetProfileName()),
 		zap.Int("port", activeConfig.Server.Port))
 
-	listener, err := net.Listen("tcp", ":"+strconv.Itoa(activeConfig.Server.Port))
-	if err != nil {
-		monitoring.GlobalContext.Fatal("Unable to start Server: %s", zap.Error(err))
-	}
+	e := echo.New()
+	api.RegisterHandlers(e, api.Implementation)
 
-	httpHandler := handler.NewHandler(database, monitoring.GlobalContext)
-
-	server := &http.Server{
-		Handler: httpHandler,
-	}
 	go func() {
-		server.Serve(listener)
+		if err := e.Start(":" + strconv.Itoa(activeConfig.Server.Port)); err != nil && err != http.ErrServerClosed {
+			monitoring.GlobalContext.Fatal("Shutting down Server")
+		}
 	}()
-	defer Stop(server)
-	monitoring.GlobalContext.Info("Started Server")
-	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
-	<-ch
-	monitoring.GlobalContext.Info("Stopping Server")
-}
 
-func Stop(server *http.Server) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt)
+	<-quit
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	if err := server.Shutdown(ctx); err != nil {
-		monitoring.GlobalContext.Error("Could not shut down server correctly", zap.Error(err))
-		os.Exit(1)
+	if err := e.Shutdown(ctx); err != nil {
+		e.Logger.Fatal(err)
 	}
 }
 
