@@ -96,10 +96,3 @@ Or to debug the instance in K3D, connect to port 40002 instead.
 Add `-profile=profile-name` to the command line or `PROFILE=profile-name` as an environment variable to select a profile when running.  The config is then loaded from the relevant json file in the profiles directory.
 
 Values can be overriden by environment variables by using an underscore to traverse the JSON structure, e.g. `SERVER_PORT=1234` will override the Server.Port config value.
-
-#### Doc Generation
-see generate_docs.go & https://goswagger.io/use/spec/meta.html
-to generate and run docs 
-   ```
-   make serve-docs
-   ```
