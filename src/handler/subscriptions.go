@@ -1,11 +1,9 @@
 package handler
 
 import (
-	"encoding/json"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
 	"github.com/google/uuid"
-	"io/ioutil"
 	"net/http"
 	"subscriptions/src/models"
 	"subscriptions/src/monitoring"
@@ -51,33 +49,6 @@ func getAllSubscriptionActions(monitoringContext *monitoring.Context, w http.Res
 	}
 	if err := render.Render(w, r, subscriptionActions); err != nil {
 		render.Render(w, r, ErrorRenderer(err))
-	}
-}
-
-func addProduct(monitoringContext *monitoring.Context, w http.ResponseWriter, r *http.Request) {
-	var product models.AddProduct
-	bytes, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, http.StatusText(400), 400)
-		return
-	}
-
-	err = json.Unmarshal(bytes, &product)
-	if err != nil {
-		http.Error(w, http.StatusText(400), 400)
-		return
-	}
-
-	err = dbInstance.AddProductToSubscription(monitoringContext, product)
-
-	if err != nil {
-		render.Render(w, r, ErrorRenderer(err))
-	} else {
-		response := models.ProductResponse{Details: "Successfully added product"}
-
-		if err := render.Render(w, r, &response); err != nil {
-			render.Render(w, r, ErrorRenderer(err))
-		}
 	}
 }
 

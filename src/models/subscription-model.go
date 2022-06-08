@@ -5,35 +5,6 @@ import (
 	"net/http"
 )
 
-type EvaluatedSubscription struct {
-	SubscriptionId string                         `json:"subscriptionId"`
-	Products       []EvaluatedSubscriptionProduct `json:"products"`
-	DateFromEpoch  string                         `json:"dateFromEpoch"`
-	DateToEpoch    string                         `json:"dateToEpoch"`
-}
-
-type EvaluatedSubscriptionProduct struct {
-	Name        string `json:"name"`
-	Type        string `json:"type"`
-	UsageAmount int    `json:"usageAmount"`
-}
-
-type SubscriptionEvaluationProduct struct {
-	Threshold int    `json:"threshold"`
-	Name      string `json:"name"`
-	Type      string `json:"type"`
-}
-
-type SubscriptionEvaluation struct {
-	ID                string
-	Products          []SubscriptionEvaluationProduct
-	LastProcessedTime string
-}
-
-type SubscriptionEvaluations struct {
-	SubscriptionEvaluations []SubscriptionEvaluation
-}
-
 type SubscriptionType struct {
 	ID   int    `json:"id"`
 	Name string `json:"name"`
@@ -86,13 +57,6 @@ func (*SubscriptionAction) Render(w http.ResponseWriter, r *http.Request) error 
 	return nil
 }
 
-type LogResponse struct {
-	Success bool   `json:"success"`
-	Details string `json:"details"`
-	Count   int    `json:"count"`
-	Limit   int    `json:"limit"`
-}
-
 type Healthcheck struct {
 	Up      bool   `json:"up"`
 	Details string `json:"details"`
@@ -100,18 +64,6 @@ type Healthcheck struct {
 
 func (*Healthcheck) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
-}
-
-func (*LogResponse) Render(w http.ResponseWriter, r *http.Request) error {
-	return nil
-}
-
-type AddProduct struct {
-	SubscriptionId string `json:"SubscriptionId"`
-	Product        string `json:"product"`
-	Type           string `json:"type"`
-	Threshold      int    `json:"threshold"`
-	Action         string `json:"action"`
 }
 
 type ProductResponse struct {
