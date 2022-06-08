@@ -52,5 +52,7 @@ func Initialize(username, password, database, host string, port int) (Database, 
 		Clock:               backoff.SystemClock,
 	})
 
+	migrateDatabase(db.Conn)
+
 	return db, err
 }

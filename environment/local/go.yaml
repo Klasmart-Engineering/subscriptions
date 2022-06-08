@@ -27,13 +27,13 @@ spec:
               scheme: HTTP
               path: /healthcheck
               port: 8080
-            initialDelaySeconds: 5
+            initialDelaySeconds: 20
             periodSeconds: 5
           livenessProbe:
             httpGet:
               path: /liveness
               port: 8080
-            initialDelaySeconds: 10
+            initialDelaySeconds: 20
             periodSeconds: 3
 ---
 apiVersion: v1
