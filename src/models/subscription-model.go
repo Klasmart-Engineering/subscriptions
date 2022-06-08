@@ -26,10 +26,6 @@ func (*SubscriptionType) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func (*ProductResponse) Render(w http.ResponseWriter, r *http.Request) error {
-	return nil
-}
-
 func (*SubscriptionResponse) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
@@ -64,10 +60,6 @@ type Healthcheck struct {
 
 func (*Healthcheck) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
-}
-
-type ProductResponse struct {
-	Details string `json:"details"`
 }
 
 type GenericResponse struct {
