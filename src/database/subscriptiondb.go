@@ -7,7 +7,6 @@ import (
 	"go.uber.org/zap"
 	"subscriptions/src/models"
 	"subscriptions/src/monitoring"
-	"time"
 )
 
 func (db Database) Healthcheck() (bool, error) {
@@ -263,105 +262,6 @@ func (db Database) GetAllSubscriptionActions(monitoringContext *monitoring.Conte
 		list.Actions = append(list.Actions, action)
 	}
 	return list, nil
-}
-
-func (db Database) LogUserAction(monitoringContext *monitoring.Context, accountAction models.SubscriptionAccountAction) {
-
-	stmt, es := db.Conn.PrepareContext(monitoringContext, `
-			INSERT INTO subscription_account_log (subscription_id, action_type, usage, product_name, interaction_at)
-			VALUES ($1, $2, $3, $4, to_timestamp($5))`)
-	if es != nil {
-		panic(es.Error())
-	}
-	subIdUUID, es := uuid2.Parse(accountAction.SubscriptionId)
-
-	if es != nil {
-		panic(es.Error())
-	}
-	_, er := stmt.ExecContext(monitoringContext, subIdUUID, accountAction.ActionType, accountAction.UsageAmount, accountAction.Product, accountAction.InteractionTimeEpoch)
-	if er != nil {
-		panic(er.Error())
-	}
-
-}
-
-func (db Database) UpdateChargeableLog(monitoringContext *monitoring.Context, accountAction models.SubscriptionAccountAction) {
-
-	stmt, es := db.Conn.PrepareContext(monitoringContext, `
-			UPDATE subscription_account_log SET valid_usage = FALSE
-			WHERE subscription_id = $1 AND action_type = $2 AND usage = $3 AND product_name = $4 AND interaction_at = to_timestamp($5)`)
-	if es != nil {
-		panic(es.Error())
-	}
-	subIdUUID, es := uuid2.Parse(accountAction.SubscriptionId)
-
-	if es != nil {
-		panic(es.Error())
-	}
-	_, er := stmt.ExecContext(monitoringContext, subIdUUID, accountAction.ActionType, accountAction.UsageAmount, accountAction.Product, accountAction.InteractionTimeEpoch)
-	if er != nil {
-		panic(er.Error())
-	}
-
-}
-
-func (db Database) CountInteractionsForSubscription(monitoringContext *monitoring.Context, userAction models.SubscriptionAccountAction) (int, error) {
-
-	var lastProcessedTime time.Time
-	if err := db.Conn.QueryRowContext(monitoringContext, `
-			SELECT last_processed
-			FROM subscription_account
-			WHERE id = $1 `,
-		userAction.SubscriptionId).Scan(&lastProcessedTime); err != nil {
-		if err == sql.ErrNoRows {
-			panic(err)
-		}
-	}
-
-	var countInteractionsSql = `
-			SELECT SUM(usage) AS user_interactions 
-			FROM subscription_account_log 
-			WHERE subscription_id = $1 AND product_name = $2 AND valid_usage = TRUE `
-
-	var countUserInteractions int
-	if !lastProcessedTime.IsZero() {
-
-		interactionTimeSql := "AND interaction_at > $3"
-		var query = countInteractionsSql + interactionTimeSql
-
-		if err := db.Conn.QueryRowContext(monitoringContext, query,
-			userAction.SubscriptionId, userAction.Product, lastProcessedTime).Scan(&countUserInteractions); err != nil {
-			if err == sql.ErrNoRows {
-				return countUserInteractions, fmt.Errorf("unknown count on user: %s", userAction.SubscriptionId)
-			}
-		}
-	} else {
-		if err := db.Conn.QueryRowContext(monitoringContext, countInteractionsSql,
-			userAction.SubscriptionId, userAction.Product).Scan(&countUserInteractions); err != nil {
-			if err == sql.ErrNoRows {
-				return countUserInteractions, fmt.Errorf("unknown count on user: %s", userAction.SubscriptionId)
-			}
-		}
-	}
-
-	return countUserInteractions, nil
-}
-
-func (db Database) GetThresholdForSubscriptionProduct(monitoringContext *monitoring.Context, userAction models.SubscriptionAccountAction) (int, error) {
-
-	var subscriptionThreshold int
-	if err := db.Conn.QueryRowContext(monitoringContext, `
-			SELECT sap.threshold 
-			FROM subscription_account_product sap 
-			JOIN subscription_account sa
-			  ON sap.subscription_id = sa.id
-			WHERE sa.id = $1 AND sap.product = $2 `,
-		userAction.SubscriptionId, userAction.Product).Scan(&subscriptionThreshold); err != nil {
-		if err == sql.ErrNoRows {
-			return subscriptionThreshold, fmt.Errorf("unknown threshold on user: %s", userAction.SubscriptionId)
-		}
-	}
-	return subscriptionThreshold, nil
 }
 
 func (db Database) AddProductToSubscription(monitoringContext *monitoring.Context, addProduct models.AddProduct) error {

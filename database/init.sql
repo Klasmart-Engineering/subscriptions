@@ -66,14 +66,3 @@ CREATE TABLE if not exists subscription_account_product
 INSERT INTO subscription_account_product (subscription_id, product, type, action)
 VALUES ((SELECT id FROM subscription_account), 'Simple Teacher Module', 'Uncapped', 'API Call'),
        ((SELECT id FROM subscription_account), 'Homework', 'Uncapped', 'API Call');
-
-CREATE TABLE if not exists subscription_account_log
-(
-    subscription_id uuid,
-    action_type     varchar                                            NOT NULL,
-    usage           int                                                NOT NULL,
-    product_name    varchar                                            NOT NULL,
-    interaction_at  timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    valid_usage  boolean NOT NULL DEFAULT TRUE,
-    FOREIGN KEY (subscription_id) REFERENCES subscription_account (id)
-);

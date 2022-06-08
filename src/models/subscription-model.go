@@ -106,18 +106,6 @@ func (*LogResponse) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-type SubscriptionAccountActionList struct {
-	Actions []SubscriptionAccountAction `json:"actions"`
-}
-
-type SubscriptionAccountAction struct {
-	SubscriptionId       string `json:"SubscriptionId"`
-	ActionType           string `json:"actionType"`
-	UsageAmount          int    `json:"usageAmount"`
-	Product              string `json:"product"`
-	InteractionTimeEpoch string `json:"interactionTimeEpoch"`
-}
-
 type AddProduct struct {
 	SubscriptionId string `json:"SubscriptionId"`
 	Product        string `json:"product"`

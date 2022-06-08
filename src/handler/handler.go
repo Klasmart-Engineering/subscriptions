@@ -25,8 +25,6 @@ func NewHandler(db db.Database, ctx *monitoring.Context) http.Handler {
 	router.Get("/liveness", applicationLiveness)
 	router.Get(wrap(ctx, "/subscription-types", getAllSubscriptionTypes))
 	router.Get(wrap(ctx, "/subscription-actions", getAllSubscriptionActions))
-	router.Post(wrap(ctx, "/log-action", logAccountAction))
-	router.Post(wrap(ctx, "/log-actions", logAccountActions))
 	router.Post(wrap(ctx, "/add-product", addProduct))
 	router.Get(wrap(ctx, "/subscription/{accountId}", createOrGetSubscription))
 	router.Post(wrap(ctx, "/deactivate/{id}", deactivateSubscription))
@@ -81,7 +79,6 @@ func recovery(next http.Handler) http.Handler {
 				w.WriteHeader(http.StatusInternalServerError)
 				w.Write(jsonBody)
 			}
-
 		}()
 
 		next.ServeHTTP(w, r)
