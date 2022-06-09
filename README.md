@@ -75,7 +75,7 @@ Go back to https://github.com/settings/tokens, click on the "Configure SSO" drop
   ./run-docker.sh debug
 ```
 - Then add the following configuration in Goland (TODO also add instructions for VScode)
-![img.png](img.png)
+![img.png](readme-images/img.png)
 
 Or to debug the instance in K3D, connect to port 40002 instead.
 
