@@ -16,6 +16,21 @@ paths:
       responses:
         "200":
           $ref: '#/components/responses/ApplicationStateResponse'
+  /test/{id}:
+    post:
+      description: This is a test endpoint
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: Numeric ID of something or other
+      requestBody:
+          $ref: '#/components/requestBodies/TestRequest'
+      responses:
+        "200":
+          $ref: '#/components/responses/ApplicationStateResponse'
 components:
   responses:
     ApplicationStateResponse:
@@ -26,8 +41,20 @@ components:
             type: object
             required:
               - up
+              - details
             properties:
               up:
                 type: boolean
               details:
+                type: string
+  requestBodies:
+    TestRequest:
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - propertyA
+            properties:
+              propertyA:
                 type: string

@@ -106,9 +106,9 @@ Install tooling:
 go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest
 ```
 
-Regenerate boilerplate:
+To regenerate boilerplate:
 ```
-oapi-codegen -package api openapi-spec.yaml > ./src/api/api.gen.go
+make openapi-generate
 ```
 
-Note that api.gen.go is in .gitignore - this is deliberate.
+This generates src/api/api.gen.go.  This contains an interface which you need to implement in api_impl.go

@@ -2,24 +2,21 @@ package api
 
 import (
 	"github.com/labstack/echo/v4"
-	"subscriptions/src/utils"
+	"subscriptions/src/monitoring"
 )
 
 type Impl struct{}
 
-var Implementation *Impl = &Impl{}
+var Implementation = &Impl{}
 
-//Your IDE should tell you here if you're not implementing all of the endpoints
+//Your IDE should tell you here if you're not implementing all the endpoints
 var _ ServerInterface = (*Impl)(nil)
 
-//Ideally we would generate & implement a second interface which provides
-//MonitoringContext rather than echo.Context and returns the return type, error tuple
-
-func (Impl) GetHealthcheck(ctx echo.Context) error {
+func (Impl) GetHealthcheck(ctx echo.Context, monitoringContext *monitoring.Context) error {
 	//TODO: Call DB
 	err := ctx.JSON(200, ApplicationStateResponse{
 		Up:      true,
-		Details: utils.StringPtr("Successfully connected to the database"),
+		Details: "Successfully connected to the database",
 	})
 	if err != nil {
 		return err
@@ -28,14 +25,19 @@ func (Impl) GetHealthcheck(ctx echo.Context) error {
 	return nil
 }
 
-func (Impl) GetLiveness(ctx echo.Context) error {
+func (Impl) GetLiveness(ctx echo.Context, monitoringContext *monitoring.Context) error {
 	err := ctx.JSON(200, ApplicationStateResponse{
 		Up:      true,
-		Details: utils.StringPtr("Application Up"),
+		Details: "Application Up",
 	})
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (i Impl) PostTestId(ctx echo.Context, monitoringContext *monitoring.Context, id int) error {
+	//TODO implement me
+	panic("implement me")
 }

@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"github.com/labstack/echo/v4"
-	_ "github.com/pdrum/swagger-automation/docs" // This line is necessary for go-swagger to find the docs!
 	"go.uber.org/zap"
 	"net/http"
 	"os"
