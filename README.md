@@ -103,7 +103,7 @@ Endpoint boilerplate is generated from openapi-spec.yaml.
 
 Install tooling:
 ```
-go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest
+go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@v1.11.0
 ```
 
 To regenerate boilerplate:
