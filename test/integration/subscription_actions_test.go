@@ -1,10 +1,10 @@
 package integration_test
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/stretchr/testify/require"
-	"net/http"
-	"subscriptions/src/models"
+	"subscriptions/src/api"
 	"subscriptions/test/integration/helper"
 	"testing"
 )
@@ -13,12 +13,12 @@ func TestGetSubscriptionActionsReturnsCorrectActions(t *testing.T) {
 	helper.ResetDatabase()
 	helper.WaitForHealthcheck(t)
 
-	resp, err := http.Get("http://localhost:8020/subscription-actions")
+	resp, err := apiClient.GetSubscriptionActions(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	var subscriptionActions models.SubscriptionActionList
+	var subscriptionActions []api.SubscriptionAction
 	err = json.NewDecoder(resp.Body).Decode(&subscriptionActions)
 	if err != nil {
 		t.Fatal(err)
@@ -26,18 +26,11 @@ func TestGetSubscriptionActionsReturnsCorrectActions(t *testing.T) {
 
 	require.Equal(t, resp.StatusCode, 200)
 
-	var expectedSubscriptionActions = models.SubscriptionActionList{
-		Actions: []models.SubscriptionAction{
-			{
-				Name:        "API Call",
-				Description: "User interaction with public API Gateway",
-				Unit:        "HTTP Requests",
-			},
-			{
-				Name:        "UserLogin",
-				Description: "User Login Action",
-				Unit:        "Account Active",
-			},
+	var expectedSubscriptionActions = []api.SubscriptionAction{
+		{
+			Name:        "API Call",
+			Description: "User interaction with public API Gateway",
+			Unit:        "HTTP Requests",
 		},
 	}
 

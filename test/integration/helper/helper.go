@@ -15,7 +15,6 @@ import (
 	"time"
 )
 
-var connection *db.Database
 var dropStatements = readFile("../../database/drop-all-tables.sql")
 
 func readFile(file string) string {
@@ -30,7 +29,7 @@ func ResetDatabase() {
 	initIfNeeded()
 
 	execOrPanic(dropStatements)
-	driver, err := postgres.WithInstance(connection.Conn, &postgres.Config{})
+	driver, err := postgres.WithInstance(db.DbConnection, &postgres.Config{})
 	if err != nil {
 		log.Panicf("Could not create migration driver: %s", err)
 	}
@@ -55,15 +54,15 @@ func RunTestSetupScript(fileName string) {
 	execOrPanic(readFile("./test-sql/" + fileName))
 }
 
-func GetDatabaseConnection() *db.Database {
+func GetDatabaseConnection() *sql.DB {
 	initIfNeeded()
 
-	return connection
+	return db.DbConnection
 }
 
 func ExactlyOneRowMatches(query string) error {
 	var rowCount int
-	if err := GetDatabaseConnection().Conn.QueryRow(query).Scan(&rowCount); err != nil {
+	if err := GetDatabaseConnection().QueryRow(query).Scan(&rowCount); err != nil {
 		if err == sql.ErrNoRows {
 			panic(err)
 		}
@@ -97,7 +96,7 @@ func AssertExactlyOneRowMatchesWithBackoff(t *testing.T, query string) {
 }
 
 func execOrPanic(statement string) {
-	_, err := connection.Conn.Exec(statement)
+	_, err := db.DbConnection.Exec(statement)
 
 	if err != nil {
 		log.Panicf("Could not execute database statement %s: %s", statement, err)
@@ -105,8 +104,8 @@ func execOrPanic(statement string) {
 }
 
 func initIfNeeded() {
-	if connection == nil {
-		conn, err := db.Initialize(
+	if db.DbConnection == nil {
+		err := db.Initialize(
 			"postgres",
 			"integration-test-pa55word!",
 			"subscriptions",
@@ -116,8 +115,6 @@ func initIfNeeded() {
 		if err != nil {
 			log.Panicf("Could not connect to database to reset for integration tests: %s", err)
 		}
-
-		connection = &conn
 	}
 }
 

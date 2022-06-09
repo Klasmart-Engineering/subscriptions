@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/labstack/echo/v4"
+	db "subscriptions/src/database"
 	"subscriptions/src/monitoring"
 )
 
@@ -13,8 +14,16 @@ var Implementation = &Impl{}
 var _ ServerInterface = (*Impl)(nil)
 
 func (Impl) GetHealthcheck(ctx echo.Context, monitoringContext *monitoring.Context) error {
-	//TODO: Call DB
-	err := ctx.JSON(200, ApplicationStateResponse{
+	healthcheck, err := db.Healthcheck()
+	if err != nil || !healthcheck {
+		err = ctx.JSON(500, ApplicationStateResponse{
+			Up:      false,
+			Details: "Could not query the database",
+		})
+		return err
+	}
+
+	err = ctx.JSON(200, ApplicationStateResponse{
 		Up:      true,
 		Details: "Successfully connected to the database",
 	})
@@ -37,7 +46,41 @@ func (Impl) GetLiveness(ctx echo.Context, monitoringContext *monitoring.Context)
 	return nil
 }
 
-func (i Impl) PostTestId(ctx echo.Context, monitoringContext *monitoring.Context, id int) error {
-	//TODO implement me
-	panic("implement me")
+func (Impl) GetSubscriptionActions(ctx echo.Context, monitoringContext *monitoring.Context) error {
+	actions, err := db.GetAllSubscriptionActions(monitoringContext)
+	if err != nil {
+		return err
+	}
+
+	response := make([]SubscriptionAction, len(actions.Actions))
+	for i, action := range actions.Actions {
+		response[i] = SubscriptionAction{
+			Description: action.Description,
+			Name:        action.Name,
+			Unit:        action.Unit,
+		}
+	}
+
+	err = ctx.JSON(200, response)
+
+	return nil
+}
+
+func (Impl) GetSubscriptionTypes(ctx echo.Context, monitoringContext *monitoring.Context) error {
+	types, err := db.GetSubscriptionTypes(monitoringContext)
+	if err != nil {
+		return err
+	}
+
+	response := make([]SubscriptionType, len(types.Subscriptions))
+	for i, action := range types.Subscriptions {
+		response[i] = SubscriptionType{
+			Id:   action.ID,
+			Name: action.Name,
+		}
+	}
+
+	err = ctx.JSON(200, response)
+
+	return nil
 }

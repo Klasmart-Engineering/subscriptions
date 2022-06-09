@@ -16,22 +16,53 @@ paths:
       responses:
         "200":
           $ref: '#/components/responses/ApplicationStateResponse'
-  /test/{id}:
-    post:
-      description: This is a test endpoint
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: integer
-          required: true
-          description: Numeric ID of something or other
-      requestBody:
-          $ref: '#/components/requestBodies/TestRequest'
+  /subscription-types:
+    get:
+      description: Get the available types of Subscription
       responses:
         "200":
-          $ref: '#/components/responses/ApplicationStateResponse'
+          description: Array of Subscription Types
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SubscriptionType'
+  /subscription-actions:
+    get:
+      description: Get the available Subscription actions
+      responses:
+        "200":
+          description: Array of Subscription Actions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SubscriptionAction'
 components:
+  schemas:
+    SubscriptionAction:
+      required:
+        - name
+        - description
+        - unit
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        unit:
+          type: string
+    SubscriptionType:
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
   responses:
     ApplicationStateResponse:
       description: Successful healthcheck or liveness response
@@ -46,15 +77,4 @@ components:
               up:
                 type: boolean
               details:
-                type: string
-  requestBodies:
-    TestRequest:
-      content:
-        application/json:
-          schema:
-            type: object
-            required:
-              - propertyA
-            properties:
-              propertyA:
                 type: string
