@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
+	"github.com/labstack/gommon/log"
 	"go.uber.org/zap"
 	"net/http"
 	"os"
@@ -40,6 +42,7 @@ func startServer(ctx context.Context) {
 		zap.Int("port", activeConfig.Server.Port))
 
 	e := echo.New()
+	e.Use(middleware.RecoverWithConfig(middleware.RecoverConfig{StackSize: 1 << 10, LogLevel: log.ERROR}))
 	api.RegisterHandlers(e, api.Implementation)
 
 	go func() {
