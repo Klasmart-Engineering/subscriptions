@@ -5,5 +5,5 @@ oapi-codegen -old-config-style -package api -templates ./openapi/templates ./ope
 if [[ $OSTYPE == 'darwin'* ]]; then
   sed -i '' 's/newrelic "github\.com\/newrelic\/go-agent"/"github.com\/newrelic\/go-agent\/v3\/newrelic"/' ./src/api/api.gen.go
 else
-  sed -i 's/newrelic "github\.com\/newrelic\/go-agent"/"github.com\/newrelic\/go-agent\/v3\/newrelic"/' ./src/api/api.gen.go
+  sed -i 's/"bytes"/"bytes"\n"github.com\/newrelic\/go-agent\/v3\/newrelic"\n"go.uber.org\/zap"/' ./src/api/api.gen.go
 fi
