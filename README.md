@@ -11,13 +11,9 @@
   brew install istioctl
   brew install jq
   brew install helm
+  go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@v1.11.0
   
-  mkdir -p /tmp/k3dvol/  
-  k3d cluster create factory --image rancher/k3s:v1.20.15-k3s1 --volume /tmp/k3dvol:/tmp/k3dvol --registry-create local-factory-registry -p "30001:30001@loadbalancer"
-  kubectl create ns subscriptions
-  kubens subscriptions
-  kubectl label namespace subscriptions istio-injection=enabled
-  
+  make setup-k3d
 ```
 
  - Go to https://github.com/settings/tokens.
@@ -60,19 +56,19 @@ Go back to https://github.com/settings/tokens, click on the "Configure SSO" drop
 ##### To run locally in K3d:
 
 ```
-  ./run.sh
+  make run-k3d
 ```
 
 ##### To run locally in docker
 
 ```
-  ./run-docker.sh
+  make run-docker
 ```
 
 ##### To remote debug locally in docker
 
 ```
-  ./run-docker.sh debug
+  make run-docker-debug
 ```
 - Then add the following configuration in Goland (TODO also add instructions for VScode)
 ![img.png](readme-images/img.png)
@@ -82,13 +78,13 @@ Or to debug the instance in K3D, connect to port 40002 instead.
 ##### To run unit tests
 
 ```
-  go test -v ./test/unit/...
+  make test-unit
 ```
 
 ##### To run integration tests
 
 ```
-  ./run-integration-tests.sh
+  make test-integration
 ```
 
 ### Profiles
@@ -101,12 +97,6 @@ Values can be overriden by environment variables by using an underscore to trave
 
 Endpoint boilerplate is generated from openapi-spec.yaml.
 
-Install tooling:
-```
-go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@v1.11.0
-```
-
-To regenerate boilerplate:
 ```
 make openapi-generate
 ```
