@@ -24,7 +24,7 @@ jobs:
     - name: Run unit tests
       run: make test-unit
     - name: Run integration tests
-      run: ./run-integration-tests.sh
+      run: make test-integration
   build-push-docker-image:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: test
