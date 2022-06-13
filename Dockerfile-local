@@ -7,6 +7,7 @@ WORKDIR /app
 
 COPY . .
 COPY environment/local/.env .
+COPY database/migrations ./database/migrations
 
 RUN go get -d -v ./...
 

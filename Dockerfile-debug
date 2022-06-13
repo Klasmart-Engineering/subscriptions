@@ -20,5 +20,6 @@ WORKDIR /app
 COPY --from=build-env /go/bin/dlv /
 COPY --from=build-env /subscriptions /app/subscriptions
 COPY --from=build-env /dockerdev/profiles /app/profiles
+COPY --from=build-env /dockerdev/database/migrations /app/database/migrations
 
 CMD ["/dlv", "--listen=:40000", "--headless=true", "--continue=true", "--api-version=2", "--accept-multiclient", "exec", "./subscriptions"]

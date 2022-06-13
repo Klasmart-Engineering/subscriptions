@@ -3,5 +3,3 @@
 FROM postgres:14.1-alpine
 RUN apk add --update curl && \
     rm -rf /var/cache/apk/*
-
-COPY ./database/init.sql /docker-entrypoint-initdb.d/

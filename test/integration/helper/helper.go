@@ -4,6 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/cenkalti/backoff/v4"
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"log"
 	"net/http"
 	"os"
@@ -14,7 +17,6 @@ import (
 
 var connection *db.Database
 var dropStatements = readFile("../../database/drop-all-tables.sql")
-var initStatements = readFile("../../database/init.sql")
 
 func readFile(file string) string {
 	content, err := os.ReadFile(file)
@@ -28,7 +30,23 @@ func ResetDatabase() {
 	initIfNeeded()
 
 	execOrPanic(dropStatements)
-	execOrPanic(initStatements)
+	driver, err := postgres.WithInstance(connection.Conn, &postgres.Config{})
+	if err != nil {
+		log.Panicf("Could not create migration driver: %s", err)
+	}
+
+	m, err := migrate.NewWithDatabaseInstance(
+		"file://../../database/migrations",
+		"postgres", driver)
+
+	err = m.Up()
+	if err != nil {
+		if err == migrate.ErrNoChange {
+			log.Println("No migrations to run, up to date")
+		} else {
+			log.Fatalf("Could not migrate database: %s", err)
+		}
+	}
 }
 
 func RunTestSetupScript(fileName string) {

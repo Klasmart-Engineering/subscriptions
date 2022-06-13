@@ -34,6 +34,9 @@ func startServer(ctx context.Context) {
 		activeConfig.NewRelicConfig.Enabled,
 		activeConfig.NewRelicConfig.TracerEnabled)
 
+	database := setupDatabase()
+	defer database.Conn.Close()
+
 	monitoring.GlobalContext.Info("Starting Server",
 		zap.String("profile", config.GetProfileName()),
 		zap.Int("port", activeConfig.Server.Port))
@@ -42,9 +45,6 @@ func startServer(ctx context.Context) {
 	if err != nil {
 		monitoring.GlobalContext.Fatal("Unable to start Server: %s", zap.Error(err))
 	}
-
-	database := setupDatabase()
-	defer database.Conn.Close()
 
 	httpHandler := handler.NewHandler(database, monitoring.GlobalContext)
 

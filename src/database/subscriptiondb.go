@@ -11,9 +11,7 @@ import (
 
 func (db Database) Healthcheck() (bool, error) {
 	var up int
-	if err := db.Conn.QueryRow(`
-			SELECT 1 AS up 
-			FROM subscription_account`).Scan(&up); err != nil {
+	if err := db.Conn.QueryRow(`SELECT 1 AS up`).Scan(&up); err != nil {
 		if err == sql.ErrNoRows {
 			return false, fmt.Errorf("unable to get connection to the database: %s", err)
 		}
