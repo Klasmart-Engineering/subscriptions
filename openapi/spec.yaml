@@ -40,6 +40,25 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/SubscriptionAction'
+  /subscriptions:
+    post:
+      description: Create a Subscription
+      x-auth-api-key: create-subscription
+      requestBody:
+        $ref: '#/components/requestBodies/CreateSubscriptionRequest'
+      responses:
+        "201":
+          description: "Successfully created a Subscription"
+          headers:
+            Location:
+              schema:
+                type: string
+                format: uri
+                description: "Location of the created resource"
+        "409":
+          description: "Could not create Subscription because one already exists for the Account"
+        "401":
+          description: "The API key provided is not recognised"
 components:
   schemas:
     SubscriptionAction:
@@ -77,4 +96,21 @@ components:
               up:
                 type: boolean
               details:
+                type: string
+  requestBodies:
+    CreateSubscriptionRequest:
+      description: Request to create a new Subscription
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - account_id
+              - state
+            properties:
+              account_id:
+                type: string
+                format: uuid
+              state:
                 type: string

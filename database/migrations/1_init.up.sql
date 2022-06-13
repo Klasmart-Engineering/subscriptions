@@ -29,7 +29,8 @@ CREATE TABLE if not exists subscription_state(
 
 INSERT INTO subscription_state (name)
 VALUES ('Active'),
-       ('Inactive');
+       ('Inactive'),
+       ('Deleted');
 
 
 CREATE TABLE if not exists subscription_account(

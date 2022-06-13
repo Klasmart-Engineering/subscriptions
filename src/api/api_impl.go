@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"github.com/labstack/echo/v4"
 	db "subscriptions/src/database"
 	"subscriptions/src/monitoring"
@@ -81,6 +82,12 @@ func (Impl) GetSubscriptionTypes(ctx echo.Context, monitoringContext *monitoring
 	}
 
 	err = ctx.JSON(200, response)
+
+	return nil
+}
+
+func (Impl) PostSubscriptions(ctx echo.Context, monitoringContext *monitoring.Context, request CreateSubscriptionRequest) error {
+	monitoringContext.Info(fmt.Sprintf("Ok then %+v", request))
 
 	return nil
 }
