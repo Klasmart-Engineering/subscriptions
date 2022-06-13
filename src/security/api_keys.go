@@ -29,7 +29,7 @@ func CheckApiKey(monitoringContext *monitoring.Context, key string, permission s
 			keyMatched = true
 		}
 
-		if keyPermission.ApiKey == key && keyPermission.Permission == permission {
+		if keyPermission.ApiKey == key && keyPermission.Permission != nil && *keyPermission.Permission == permission {
 			return true, true
 		}
 	}
