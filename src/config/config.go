@@ -18,6 +18,7 @@ type config struct {
 	Logging        loggingConfig
 	Database       databaseConfig
 	NewRelicConfig newRelicConfig
+	AuthConfig     authConfig
 }
 
 type serverConfig struct {
@@ -41,6 +42,10 @@ type databaseConfig struct {
 	User         string
 	Password     string
 	DatabaseName string
+}
+
+type authConfig struct {
+	ApiKeyCacheMs int
 }
 
 func LoadProfile(name string) {
