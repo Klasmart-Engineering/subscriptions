@@ -158,6 +158,11 @@ func (w *ServerInterfaceWrapper) {{.OperationId}} (ctx echo.Context) error {
             }
         }
     {{end}}
+    {{if ne (printf "%s" (index .Spec.ExtensionProps.Extensions "x-auth-api-key")) "%!s(<nil>)"}}
+        if result := permissionCheck(ctx, monitoringContext, {{printf "%s" (index .Spec.ExtensionProps.Extensions "x-auth-api-key")}}); !result {
+            callHandler = false
+        }
+    {{end}}
     if callHandler {
         err = w.Handler.{{.OperationId}}(ctx, monitoringContext{{if and (eq .BodyRequired true) (eq (len .Bodies) 1)}}, request{{end}}{{genParamNames .PathParams}}{{if .RequiresParamObject}}, params{{end}})
     }
@@ -194,4 +199,21 @@ func noContentOrLog(monitoringContext *monitoring.Context, ctx echo.Context, sta
 	if err := ctx.NoContent(status); err != nil {
 		monitoringContext.Error("Could not write status code response", zap.Error(err))
 	}
+}
+
+func permissionCheck(ctx echo.Context, monitoringContext *monitoring.Context, permission string) bool {
+	bearerToken := strings.Replace(ctx.Request().Header.Get("Authorization"), "Bearer ", "", 1)
+	keyMatched, permissionMatched := security.CheckApiKey(monitoringContext, bearerToken, permission)
+
+	if !keyMatched {
+		noContentOrLog(monitoringContext, ctx, 401)
+		return false
+	}
+
+	if !permissionMatched {
+		noContentOrLog(monitoringContext, ctx, 403)
+		return false
+	}
+
+	return true
 }

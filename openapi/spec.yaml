@@ -43,6 +43,7 @@ paths:
   /subscriptions:
     post:
       description: Create a Subscription
+      x-auth-api-key: create-subscription
       requestBody:
         $ref: '#/components/requestBodies/CreateSubscriptionRequest'
       responses:

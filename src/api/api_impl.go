@@ -3,10 +3,8 @@ package api
 import (
 	"fmt"
 	"github.com/labstack/echo/v4"
-	"strings"
 	db "subscriptions/src/database"
 	"subscriptions/src/monitoring"
-	"subscriptions/src/security"
 )
 
 type Impl struct{}
@@ -89,28 +87,7 @@ func (Impl) GetSubscriptionTypes(ctx echo.Context, monitoringContext *monitoring
 }
 
 func (Impl) PostSubscriptions(ctx echo.Context, monitoringContext *monitoring.Context, request CreateSubscriptionRequest) error {
-	if result := permissionCheck(ctx, monitoringContext, "create-subscription"); !result {
-		return nil
-	}
-
 	monitoringContext.Info(fmt.Sprintf("Ok then %+v", request))
 
 	return nil
-}
-
-func permissionCheck(ctx echo.Context, monitoringContext *monitoring.Context, permission string) bool {
-	bearerToken := strings.Replace(ctx.Request().Header.Get("Authorization"), "Bearer ", "", 1)
-	keyMatched, permissionMatched := security.CheckApiKey(monitoringContext, bearerToken, permission)
-
-	if !keyMatched {
-		noContentOrLog(monitoringContext, ctx, 401)
-		return false
-	}
-
-	if !permissionMatched {
-		noContentOrLog(monitoringContext, ctx, 403)
-		return false
-	}
-
-	return true
 }
