@@ -33,11 +33,9 @@ VALUES ('Active'),
        ('Deleted');
 
 
-CREATE TABLE if not exists subscription_account(
+CREATE TABLE if not exists subscription(
     id                    uuid DEFAULT gen_random_uuid() UNIQUE,
     account_id            UUID NOT NULL,
-    last_processed        timestamp with time zone,
-    run_frequency_minutes int    NOT NULL,
     state                 int    NOT NULL,
     FOREIGN KEY (state) REFERENCES subscription_state (id),
     PRIMARY KEY (id, account_id)

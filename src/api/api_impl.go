@@ -1,9 +1,11 @@
 package api
 
 import (
-	"fmt"
+	uuid2 "github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+	"go.uber.org/zap"
 	db "subscriptions/src/database"
+	"subscriptions/src/models"
 	"subscriptions/src/monitoring"
 )
 
@@ -87,7 +89,39 @@ func (Impl) GetSubscriptionTypes(ctx echo.Context, monitoringContext *monitoring
 }
 
 func (Impl) PostSubscriptions(ctx echo.Context, monitoringContext *monitoring.Context, request CreateSubscriptionRequest) error {
-	monitoringContext.Info(fmt.Sprintf("Ok then %+v", request))
+	exists, _, err := db.GetSubscription(monitoringContext, request.AccountId.String())
+	if err != nil {
+		monitoringContext.Error("Unable to check if Subscription already exists", zap.Error(err))
+		noContentOrLog(monitoringContext, ctx, 500)
+		return nil
+	}
+
+	if exists {
+		noContentOrLog(monitoringContext, ctx, 409)
+		return nil
+	}
+
+	subscriptionState, err := models.SubscriptionStateFromString(request.State)
+	if err != nil || subscriptionState == models.Deleted {
+		noContentOrLog(monitoringContext, ctx, 400)
+		return nil
+	}
+
+	subscription := models.Subscription{
+		Id:        uuid2.New(),
+		AccountId: request.AccountId,
+		State:     subscriptionState,
+	}
+
+	err = db.CreateSubscription(monitoringContext, subscription)
+	if err != nil {
+		monitoringContext.Error("Unable to create Subscription", zap.Error(err))
+		noContentOrLog(monitoringContext, ctx, 500)
+		return nil
+	}
+
+	ctx.Response().Header().Set("Location", "/subscriptions/"+subscription.Id.String())
+	ctx.Response().WriteHeader(201)
 
 	return nil
 }
