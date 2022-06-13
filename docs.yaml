@@ -2,25 +2,32 @@ basePath: /
 consumes:
 - application/json
 definitions:
-  AddProduct:
+  FooBarRequest:
     properties:
-      SubscriptionId:
+      bar:
+        items:
+          format: int64
+          type: integer
+        type: array
+        x-go-name: Bar
+      foo:
         type: string
-      action:
-        type: string
-        x-go-name: Action
-      product:
-        type: string
-        x-go-name: Product
-      threshold:
-        format: int64
-        type: integer
-        x-go-name: Threshold
-      type:
-        type: string
-        x-go-name: Type
+        x-go-name: Foo
+    title: FooBarRequest represents body of FooBar request.
     type: object
-    x-go-package: subscriptions/src/models
+    x-go-package: github.com/pdrum/swagger-automation/api
+  FooBarResponse:
+    properties:
+      baz:
+        properties:
+          prop:
+            type: string
+            x-go-name: Prop
+        type: object
+        x-go-name: Baz
+    title: FooBarResponse represents body of FooBar response.
+    type: object
+    x-go-package: github.com/pdrum/swagger-automation/api
   GenericResponse:
     properties:
       details:
@@ -36,59 +43,6 @@ definitions:
       up:
         type: boolean
         x-go-name: Up
-    type: object
-    x-go-package: subscriptions/src/models
-  LogResponse:
-    properties:
-      count:
-        format: int64
-        type: integer
-        x-go-name: Count
-      details:
-        type: string
-        x-go-name: Details
-      limit:
-        format: int64
-        type: integer
-        x-go-name: Limit
-      success:
-        type: boolean
-        x-go-name: Success
-    type: object
-    x-go-package: subscriptions/src/models
-  ProductResponse:
-    properties:
-      details:
-        type: string
-        x-go-name: Details
-    type: object
-    x-go-package: subscriptions/src/models
-  SubscriptionAccountAction:
-    properties:
-      SubscriptionId:
-        type: string
-      actionType:
-        type: string
-        x-go-name: ActionType
-      interactionTimeEpoch:
-        type: string
-        x-go-name: InteractionTimeEpoch
-      product:
-        type: string
-        x-go-name: Product
-      usageAmount:
-        format: int64
-        type: integer
-        x-go-name: UsageAmount
-    type: object
-    x-go-package: subscriptions/src/models
-  SubscriptionAccountActionList:
-    properties:
-      actions:
-        items:
-          $ref: '#/definitions/SubscriptionAccountAction'
-        type: array
-        x-go-name: Actions
     type: object
     x-go-package: subscriptions/src/models
   SubscriptionAction:
@@ -143,27 +97,12 @@ definitions:
         x-go-name: Subscriptions
     type: object
     x-go-package: subscriptions/src/models
-host: some-url.com
+host: some-url-update.com
 info:
   description: Documentation of our awesome Subscription API.
   title: Subscription Service.
   version: 1.0.0
 paths:
-  /add-product:
-    post:
-      description: Log actions with API
-      operationId: addProductEndpoint
-      parameters:
-      - description: Request containing information about product to add
-        in: body
-        name: Body
-        schema:
-          $ref: '#/definitions/AddProduct'
-      responses:
-        "200":
-          $ref: '#/responses/ProductResponse'
-      tags:
-      - add-product
   /deactivate/{id}:
     post:
       description: Log actions with API
@@ -179,16 +118,21 @@ paths:
           $ref: '#/responses/ProductResponse'
       tags:
       - deactivate-subscription
-  /evaluate-subscriptions:
+  /foobar:
     post:
-      description: Evaluate Subscription usage. Used for periodic processing of subscriptions
-        usage
-      operationId: evaluateSubscriptionsEndpoint
+      operationId: idOfFoobarEndpoint
+      parameters:
+      - description: This text will appear as description of your request body.
+        in: body
+        name: Body
+        schema:
+          $ref: '#/definitions/FooBarRequest'
       responses:
         "200":
-          description: ""
+          $ref: '#/responses/foobarResponse'
+      summary: Foobar does some amazing stuff.
       tags:
-      - evaluate-subscriptions
+      - foobar-tag
   /healthcheck:
     get:
       description: Application Healthcheck. Checking database connection and used
@@ -209,36 +153,6 @@ paths:
           $ref: '#/responses/Healthcheck'
       tags:
       - application-liveness
-  /log-action:
-    post:
-      description: Log action with API
-      operationId: logActionEndpoint
-      parameters:
-      - description: Request containing information about the API interaction
-        in: body
-        name: Body
-        schema:
-          $ref: '#/definitions/SubscriptionAccountAction'
-      responses:
-        "200":
-          $ref: '#/responses/LogResponse'
-      tags:
-      - log-action
-  /log-actions:
-    post:
-      description: Log actions with API
-      operationId: logActionsEndpoint
-      parameters:
-      - description: Request containing information about the API interactions
-        in: body
-        name: Body
-        schema:
-          $ref: '#/definitions/SubscriptionAccountActionList'
-      responses:
-        "200":
-          description: ""
-      tags:
-      - log-actions
   /subscription-actions:
     get:
       operationId: subscriptionActionsEndpoint
@@ -279,16 +193,14 @@ responses:
     description: Liveness Response containing status information.
     schema:
       $ref: '#/definitions/Healthcheck'
-  LogResponse:
-    description: Response containing request count and limit information.
-    schema:
-      $ref: '#/definitions/LogResponse'
   ProductResponse:
     description: Response containing details about product addition.
     schema:
       $ref: '#/definitions/GenericResponse'
-  evaluateSubscriptionResponsesWrapper:
-    description: Response for evaluate subscriptions
+  foobarResponse:
+    description: This text will appear as description of your response body.
+    schema:
+      $ref: '#/definitions/FooBarResponse'
   getSubscriptionResponsesWrapper:
     description: Response for evaluate subscriptions
     schema:

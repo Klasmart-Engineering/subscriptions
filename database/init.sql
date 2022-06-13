@@ -50,30 +50,3 @@ CREATE TABLE if not exists subscription_account
 
 INSERT INTO subscription_account (id, account_id, run_frequency_minutes, state)
 VALUES (gen_random_uuid(), gen_random_uuid(), 5, 1);
-
-CREATE TABLE if not exists subscription_account_product
-(
-    subscription_id uuid                   NOT NULL,
-    product         varchar                NOT NULL,
-    type            character varying(255) NOT NULL,
-    threshold       int                    NULL,
-    action          character varying(255) NOT NULL,
-    FOREIGN KEY (type) REFERENCES subscription_type (name),
-    FOREIGN KEY (action) REFERENCES subscription_action (name)
-);
-
-
-INSERT INTO subscription_account_product (subscription_id, product, type, action)
-VALUES ((SELECT id FROM subscription_account), 'Simple Teacher Module', 'Uncapped', 'API Call'),
-       ((SELECT id FROM subscription_account), 'Homework', 'Uncapped', 'API Call');
-
-CREATE TABLE if not exists subscription_account_log
-(
-    subscription_id uuid,
-    action_type     varchar                                            NOT NULL,
-    usage           int                                                NOT NULL,
-    product_name    varchar                                            NOT NULL,
-    interaction_at  timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    valid_usage  boolean NOT NULL DEFAULT TRUE,
-    FOREIGN KEY (subscription_id) REFERENCES subscription_account (id)
-);
