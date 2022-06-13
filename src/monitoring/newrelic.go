@@ -1,7 +1,7 @@
 package monitoring
 
 import (
-	"github.com/newrelic/go-agent/_integrations/nrzap"
+	"github.com/newrelic/go-agent/v3/integrations/nrzap"
 	"github.com/newrelic/go-agent/v3/newrelic"
 )
 

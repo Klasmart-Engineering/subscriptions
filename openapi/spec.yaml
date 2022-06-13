@@ -1,0 +1,80 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: Subscriptions Service
+  description: A service that deals with access to the KL platform
+paths:
+  /healthcheck:
+    get:
+      description: Returns whether the application is healthy (connected to dependencies)
+      responses:
+        "200":
+          $ref: '#/components/responses/ApplicationStateResponse'
+  /liveness:
+    get:
+      description: Returns whether the application is running
+      responses:
+        "200":
+          $ref: '#/components/responses/ApplicationStateResponse'
+  /subscription-types:
+    get:
+      description: Get the available types of Subscription
+      responses:
+        "200":
+          description: Array of Subscription Types
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SubscriptionType'
+  /subscription-actions:
+    get:
+      description: Get the available Subscription actions
+      responses:
+        "200":
+          description: Array of Subscription Actions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SubscriptionAction'
+components:
+  schemas:
+    SubscriptionAction:
+      required:
+        - name
+        - description
+        - unit
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        unit:
+          type: string
+    SubscriptionType:
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+  responses:
+    ApplicationStateResponse:
+      description: Successful healthcheck or liveness response
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - up
+              - details
+            properties:
+              up:
+                type: boolean
+              details:
+                type: string

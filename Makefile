@@ -1,9 +1,26 @@
+build:
+	go build -o ./subscriptions-app ./src/main.go
 
-check-docs:
-	which swagger || (go get github.com/go-swagger/go-swagger/cmd/swagger@latest)
+test-unit:
+	go test -v ./test/unit/...
 
-docs: check-docs
-	swagger generate spec -o ./docs.yaml --scan-models
+test-integration:
+	./scripts/run-integration-tests.sh
 
-serve-docs: check-docs docs
-	swagger serve -F=swagger docs.yaml
+openapi-generate:
+	./scripts/openapi-generate.sh
+
+setup-k3d:
+	./scripts/setup-k3d.sh
+
+run-k3d:
+	./scripts/run-k3d.sh
+
+kill-k3d:
+	k3d cluster delete factory
+
+run-docker:
+	./scripts/run-docker.sh
+
+run-docker-debug:
+	./scripts/run-docker.sh debug

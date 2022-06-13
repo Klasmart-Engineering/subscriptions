@@ -9,16 +9,9 @@ import (
 	"time"
 )
 
-// ErrNoMatch is returned when we request a row that doesn't exist
-var ErrNoMatch = fmt.Errorf("no matching record")
+var DbConnection *sql.DB
 
-type Database struct {
-	Conn *sql.DB
-}
-
-func Initialize(username, password, database, host string, port int) (Database, error) {
-	db := Database{}
-
+func Initialize(username, password, database, host string, port int) error {
 	connect := func() error {
 		log.Printf("Attempting to connect to database %s@%s:%d", username, host, port)
 		dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
@@ -28,8 +21,8 @@ func Initialize(username, password, database, host string, port int) (Database, 
 			log.Printf("Could not connect to database: %s", err)
 			return err
 		}
-		db.Conn = conn
-		err = db.Conn.Ping()
+		DbConnection = conn
+		err = DbConnection.Ping()
 		if err != nil {
 			log.Printf("Could not ping database: %s", err)
 			return err
@@ -48,5 +41,5 @@ func Initialize(username, password, database, host string, port int) (Database, 
 		Clock:               backoff.SystemClock,
 	})
 
-	return db, err
+	return err
 }

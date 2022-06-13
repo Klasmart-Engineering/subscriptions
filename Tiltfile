@@ -10,8 +10,6 @@ docker_build('local-go-image', '.',
 
 helm_resource('krakend', '../microgateway-base-helm/charts', flags = ['--set', 'global.imagePullSecrets[0].name=dockerconfigjson-github-com'])
 
-docker_build('local-postgres-image', '.',
-    dockerfile='Dockerfile-postgres')
 k8s_yaml('./environment/local/go.yaml')
 k8s_yaml('./environment/local/postgres.yaml')
 

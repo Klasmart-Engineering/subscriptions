@@ -10,16 +10,9 @@ import (
 	"time"
 )
 
-// ErrNoMatch is returned when we request a row that doesn't exist
-var ErrNoMatch = fmt.Errorf("no matching record")
+var dbConnection *sql.DB
 
-type Database struct {
-	Conn *sql.DB
-}
-
-func Initialize(username, password, database, host string, port int) (Database, error) {
-	db := Database{}
-
+func Initialize(username, password, database, host string, port int) error {
 	connect := func() error {
 		monitoring.GlobalContext.Info("Attempting to connect to database",
 			zap.String("username", username),
@@ -32,8 +25,8 @@ func Initialize(username, password, database, host string, port int) (Database, 
 			monitoring.GlobalContext.Error("Could not connect to database", zap.Error(err))
 			return err
 		}
-		db.Conn = conn
-		err = db.Conn.Ping()
+		dbConnection = conn
+		err = dbConnection.Ping()
 		if err != nil {
 			monitoring.GlobalContext.Error("Could not ping database", zap.Error(err))
 			return err
@@ -52,7 +45,15 @@ func Initialize(username, password, database, host string, port int) (Database, 
 		Clock:               backoff.SystemClock,
 	})
 
-	migrateDatabase(db.Conn)
+	if err != nil {
+		return err
+	}
 
-	return db, err
+	migrateDatabase(dbConnection)
+
+	return nil
+}
+
+func Close() {
+	dbConnection.Close()
 }

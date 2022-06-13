@@ -9,9 +9,9 @@ import (
 	"subscriptions/src/monitoring"
 )
 
-func (db Database) Healthcheck() (bool, error) {
+func Healthcheck() (bool, error) {
 	var up int
-	if err := db.Conn.QueryRow(`SELECT 1 AS up`).Scan(&up); err != nil {
+	if err := dbConnection.QueryRow(`SELECT 1 AS up`).Scan(&up); err != nil {
 		if err == sql.ErrNoRows {
 			return false, fmt.Errorf("unable to get connection to the database: %s", err)
 		}
@@ -20,9 +20,9 @@ func (db Database) Healthcheck() (bool, error) {
 	return up == 1, nil
 }
 
-func (db Database) IsValidSubscriptionId(monitoringContext *monitoring.Context, subscriptionId string) (bool, error) {
+func IsValidSubscriptionId(monitoringContext *monitoring.Context, subscriptionId string) (bool, error) {
 	var valid int
-	if err := db.Conn.QueryRowContext(monitoringContext, `
+	if err := dbConnection.QueryRowContext(monitoringContext, `
 			SELECT 1 AS up 
 			FROM subscription_account
 			WHERE id = $1`, subscriptionId).Scan(&valid); err != nil {
@@ -34,9 +34,9 @@ func (db Database) IsValidSubscriptionId(monitoringContext *monitoring.Context, 
 	return valid == 1, nil
 }
 
-func (db Database) IsSubscriptionActive(monitoringContext *monitoring.Context, subscriptionId string) (bool, error) {
+func IsSubscriptionActive(monitoringContext *monitoring.Context, subscriptionId string) (bool, error) {
 	var state string
-	if err := db.Conn.QueryRowContext(monitoringContext, `
+	if err := dbConnection.QueryRowContext(monitoringContext, `
 			SELECT ss.name 
 			FROM subscription_account sa 
 			JOIN subscription_state ss
@@ -50,14 +50,14 @@ func (db Database) IsSubscriptionActive(monitoringContext *monitoring.Context, s
 	return state == "Active", nil
 }
 
-func (db Database) SubscriptionExists(monitoringContext *monitoring.Context, accountId string) (subscriptionId uuid2.UUID, state int, err error) {
+func SubscriptionExists(monitoringContext *monitoring.Context, accountId string) (subscriptionId uuid2.UUID, state int, err error) {
 
 	var subId uuid2.UUID
 	var subscriptionState int
 	sqlStatement := `SELECT id, state FROM subscription_account
 						WHERE account_id = $1;`
 
-	err = db.Conn.QueryRowContext(monitoringContext, sqlStatement, accountId).Scan(&subId, &subscriptionState)
+	err = dbConnection.QueryRowContext(monitoringContext, sqlStatement, accountId).Scan(&subId, &subscriptionState)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -70,7 +70,7 @@ func (db Database) SubscriptionExists(monitoringContext *monitoring.Context, acc
 	return subId, subscriptionState, nil
 }
 
-func (db Database) CreateSubscription(monitoringContext *monitoring.Context, accountId string) (uuid uuid2.UUID, err error) {
+func CreateSubscription(monitoringContext *monitoring.Context, accountId string) (uuid uuid2.UUID, err error) {
 	var minutes = 43200 //30 days by default for now
 	var state = 1       // Active by default
 
@@ -78,7 +78,7 @@ func (db Database) CreateSubscription(monitoringContext *monitoring.Context, acc
 	sqlStatement := `INSERT INTO subscription_account (account_id, run_frequency_minutes, state)
 						VALUES($1, $2, $3) RETURNING id;`
 
-	err = db.Conn.QueryRowContext(monitoringContext, sqlStatement, accountId, minutes, state).Scan(&subscriptionId)
+	err = dbConnection.QueryRowContext(monitoringContext, sqlStatement, accountId, minutes, state).Scan(&subscriptionId)
 	if err != nil {
 		monitoringContext.Panic("Unable to create subscription", zap.Error(err))
 	}
@@ -86,14 +86,14 @@ func (db Database) CreateSubscription(monitoringContext *monitoring.Context, acc
 	return subscriptionId, err
 }
 
-func (db Database) UpdateSubscriptionStatus(monitoringContext *monitoring.Context, subscriptionId string, active int) error {
+func UpdateSubscriptionStatus(monitoringContext *monitoring.Context, subscriptionId string, active int) error {
 
 	sqlStatement := `
 			UPDATE subscription_account
 			 SET state = $1
 			WHERE id = $2;`
 
-	_, err := db.Conn.ExecContext(monitoringContext, sqlStatement, &active, &subscriptionId)
+	_, err := dbConnection.ExecContext(monitoringContext, sqlStatement, &active, &subscriptionId)
 	if err != nil {
 		return err
 	}
@@ -101,10 +101,10 @@ func (db Database) UpdateSubscriptionStatus(monitoringContext *monitoring.Contex
 	return nil
 }
 
-func (db Database) GetSubscriptionTypes(monitoringContext *monitoring.Context) (*models.SubscriptionTypeList, error) {
+func GetSubscriptionTypes(monitoringContext *monitoring.Context) (*models.SubscriptionTypeList, error) {
 	list := &models.SubscriptionTypeList{}
 	sqlQuery := "SELECT id, name FROM subscription_type ORDER BY id DESC"
-	rows, err := db.Conn.QueryContext(monitoringContext, sqlQuery)
+	rows, err := dbConnection.QueryContext(monitoringContext, sqlQuery)
 	if err != nil {
 		return list, err
 	}
@@ -119,10 +119,10 @@ func (db Database) GetSubscriptionTypes(monitoringContext *monitoring.Context) (
 	return list, nil
 }
 
-func (db Database) GetAllSubscriptionActions(monitoringContext *monitoring.Context) (*models.SubscriptionActionList, error) {
+func GetAllSubscriptionActions(monitoringContext *monitoring.Context) (*models.SubscriptionActionList, error) {
 	list := &models.SubscriptionActionList{}
 
-	rows, err := db.Conn.QueryContext(monitoringContext, "SELECT name, description, unit FROM subscription_action")
+	rows, err := dbConnection.QueryContext(monitoringContext, "SELECT name, description, unit FROM subscription_action")
 	if err != nil {
 		return list, err
 	}

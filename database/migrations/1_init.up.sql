@@ -18,8 +18,7 @@ CREATE TABLE if not exists subscription_action(
 
 
 INSERT INTO subscription_action (name, description, unit)
-VALUES ('API Call', 'User interaction with public API Gateway', 'HTTP Requests'),
-       ('UserLogin', 'User Login Action', 'Account Active');
+VALUES ('API Call', 'User interaction with public API Gateway', 'HTTP Requests');
 
 
 CREATE TABLE if not exists subscription_state(
@@ -30,8 +29,7 @@ CREATE TABLE if not exists subscription_state(
 
 INSERT INTO subscription_state (name)
 VALUES ('Active'),
-       ('Inactive'),
-       ('Disabled'); -- TODO Disabled or Deleted?
+       ('Inactive');
 
 
 CREATE TABLE if not exists subscription_account(
@@ -39,7 +37,7 @@ CREATE TABLE if not exists subscription_account(
     account_id            UUID NOT NULL,
     last_processed        timestamp with time zone,
     run_frequency_minutes int    NOT NULL,
-    state                 serial NOT NULL,
+    state                 int    NOT NULL,
     FOREIGN KEY (state) REFERENCES subscription_state (id),
     PRIMARY KEY (id, account_id)
 );
