@@ -19,6 +19,6 @@
     "TracerEnabled": false
   },
   "AuthConfig": {
-    "ApiKeyCacheMs": 60000
+    "ApiKeyCacheMs": 1
   }
 }

@@ -2,6 +2,6 @@
 type ServerInterface interface {
 {{range .}}{{.SummaryAsComment }}
 // ({{.Method}} {{.Path}})
-{{.OperationId}}(ctx echo.Context, monitoringContext *monitoring.Context{{if and (eq .BodyRequired true) (eq (len .Bodies) 1)}}, request {{ (index .Bodies 0).Schema.RefType }}{{end}}{{genParamArgs .PathParams}}{{if .RequiresParamObject}}, params {{.OperationId}}Params{{end}}) error
+{{.OperationId}}(ctx echo.Context, monitoringContext *monitoring.Context{{if or (ne (printf "%s" (index .Spec.ExtensionProps.Extensions "x-auth-api-key")) "%!s(<nil>)") (ne (printf "%s" (index .Spec.ExtensionProps.Extensions "x-auth-jwt")) "%!s(<nil>)")}}, apiAuth ApiAuth{{end}}{{if and (eq .BodyRequired true) (eq (len .Bodies) 1)}}, request {{ (index .Bodies 0).Schema.RefType }}{{end}}{{genParamArgs .PathParams}}{{if .RequiresParamObject}}, params {{.OperationId}}Params{{end}}) error
 {{end}}
 }

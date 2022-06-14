@@ -1,6 +1,8 @@
 package api
 
 import (
+	"fmt"
+	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
 	uuid2 "github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
@@ -88,7 +90,7 @@ func (Impl) GetSubscriptionTypes(ctx echo.Context, monitoringContext *monitoring
 	return nil
 }
 
-func (Impl) PostSubscriptions(ctx echo.Context, monitoringContext *monitoring.Context, request CreateSubscriptionRequest) error {
+func (Impl) PostSubscriptions(ctx echo.Context, monitoringContext *monitoring.Context, apiAuth ApiAuth, request CreateSubscriptionRequest) error {
 	exists, _, err := db.GetSubscription(monitoringContext, request.AccountId.String())
 	if err != nil {
 		monitoringContext.Error("Unable to check if Subscription already exists", zap.Error(err))
@@ -116,6 +118,14 @@ func (Impl) PostSubscriptions(ctx echo.Context, monitoringContext *monitoring.Co
 
 	ctx.Response().Header().Set("Location", "/subscriptions/"+subscription.Id.String())
 	ctx.Response().WriteHeader(201)
+
+	return nil
+}
+
+func (i Impl) GetSubscriptionsSubscriptionId(ctx echo.Context, monitoringContext *monitoring.Context, apiAuth ApiAuth, subscriptionId openapi_types.UUID) error {
+	monitoringContext.Info(fmt.Sprintf("Api Auth %+v", apiAuth))
+	monitoringContext.Info(fmt.Sprintf("Api Key %+v", apiAuth.ApiKey))
+	monitoringContext.Info(fmt.Sprintf("Jwt %+v", apiAuth.Jwt))
 
 	return nil
 }

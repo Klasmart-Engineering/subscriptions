@@ -158,14 +158,52 @@ func (w *ServerInterfaceWrapper) {{.OperationId}} (ctx echo.Context) error {
             }
         }
     {{end}}
+    {{if and (eq (printf "%s" (index .Spec.ExtensionProps.Extensions "x-auth-api-key")) "%!s(<nil>)") (eq (printf "%s" (index .Spec.ExtensionProps.Extensions "x-auth-jwt")) "%!s(<nil>)")}}
+        passedAuth := true
+    {{else}}
+        passedAuth := false
+        apiAuth := ApiAuth {}
+    {{end}}
     {{if ne (printf "%s" (index .Spec.ExtensionProps.Extensions "x-auth-api-key")) "%!s(<nil>)"}}
-        if result := permissionCheck(ctx, monitoringContext, {{printf "%s" (index .Spec.ExtensionProps.Extensions "x-auth-api-key")}}); !result {
-            callHandler = false
+        bearerToken := strings.Replace(ctx.Request().Header.Get("Authorization"), "Bearer ", "", 1)
+        keyMatched, permissionMatched, clientName := security.CheckApiKey(monitoringContext, bearerToken, {{printf "%s" (index .Spec.ExtensionProps.Extensions "x-auth-api-key")}})
+
+        if keyMatched && permissionMatched {
+            apiAuth.ApiKey = &ApiKeyAuth{
+                ClientName: clientName,
+            }
+            passedAuth = true
         }
     {{end}}
-    if callHandler {
-        err = w.Handler.{{.OperationId}}(ctx, monitoringContext{{if and (eq .BodyRequired true) (eq (len .Bodies) 1)}}, request{{end}}{{genParamNames .PathParams}}{{if .RequiresParamObject}}, params{{end}})
+    {{if ne (printf "%s" (index .Spec.ExtensionProps.Extensions "x-auth-jwt")) "%!s(<nil>)"}}
+        jwtBearerToken := strings.Replace(ctx.Request().Header.Get("Authorization"), "Bearer ", "", 1)
+        passed, jwtSubscriptionId, jwtAccountId, jwtAndroidId := security.CheckJwt(monitoringContext, jwtBearerToken)
+
+        if passed {
+            apiAuth.Jwt = &JwtAuth{
+                SubscriptionId: jwtSubscriptionId,
+                AccountId: jwtAccountId,
+                AndroidId: jwtAndroidId,
+            }
+            passedAuth = true
+        }
+    {{end}}
+    if callHandler && passedAuth {
+        err = w.Handler.{{.OperationId}}(ctx, monitoringContext{{if or (ne (printf "%s" (index .Spec.ExtensionProps.Extensions "x-auth-api-key")) "%!s(<nil>)") (ne (printf "%s" (index .Spec.ExtensionProps.Extensions "x-auth-jwt")) "%!s(<nil>)")}}, apiAuth{{end}}{{if and (eq .BodyRequired true) (eq (len .Bodies) 1)}}, request{{end}}{{genParamNames .PathParams}}{{if .RequiresParamObject}}, params{{end}})
     }
+
+    if !passedAuth {
+        {{if ne (printf "%s" (index .Spec.ExtensionProps.Extensions "x-auth-api-key")) "%!s(<nil>)"}}
+            if !keyMatched {
+                noContentOrLog(monitoringContext, ctx, 401)
+            } else if !permissionMatched {
+                noContentOrLog(monitoringContext, ctx, 403)
+            }
+        {{else}}
+            noContentOrLog(monitoringContext, ctx, 401)
+        {{end}}
+    }
+
     if nil != err && !ctx.Response().Committed {
         ctx.Response().Writer = rw
 
@@ -201,19 +239,17 @@ func noContentOrLog(monitoringContext *monitoring.Context, ctx echo.Context, sta
 	}
 }
 
-func permissionCheck(ctx echo.Context, monitoringContext *monitoring.Context, permission string) bool {
-	bearerToken := strings.Replace(ctx.Request().Header.Get("Authorization"), "Bearer ", "", 1)
-	keyMatched, permissionMatched := security.CheckApiKey(monitoringContext, bearerToken, permission)
+type ApiAuth struct {
+	ApiKey *ApiKeyAuth
+	Jwt *JwtAuth
+}
 
-	if !keyMatched {
-		noContentOrLog(monitoringContext, ctx, 401)
-		return false
-	}
+type ApiKeyAuth struct {
+	ClientName string
+}
 
-	if !permissionMatched {
-		noContentOrLog(monitoringContext, ctx, 403)
-		return false
-	}
-
-	return true
+type JwtAuth struct {
+	SubscriptionId string
+	AccountId string
+	AndroidId string
 }
