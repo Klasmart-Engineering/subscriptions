@@ -61,6 +61,30 @@ paths:
           description: "The API key provided is not recognised"
         "403":
           description: "The API key provided is not allowed to call this endpoint"
+  /subscriptions/{subscription_id}:
+    get:
+      description: Get a Subscription by ID
+      x-auth-api-key: get-subscription
+      x-auth-jwt: true
+      parameters:
+        - name: subscription_id
+          schema:
+            type: string
+            format: uuid
+          in: path
+      responses:
+        "200":
+          description: "Successfully retrieved the Subscription"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+        "404":
+          description: "Subscription does not exist"
+        "401":
+          description: "The API key provided is not recognised"
+        "403":
+          description: "The API key provided is not allowed to call this endpoint"
 components:
   schemas:
     SubscriptionAction:
@@ -83,6 +107,20 @@ components:
         id:
           type: integer
         name:
+          type: string
+    Subscription:
+      required:
+        - id
+        - account_id
+        - state
+      properties:
+        id:
+          type: string
+          format: uuid
+        account_id:
+          type: string
+          format: uuid
+        state:
           type: string
   responses:
     ApplicationStateResponse:
