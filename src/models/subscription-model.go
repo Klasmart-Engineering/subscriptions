@@ -55,11 +55,11 @@ func SubscriptionStateFromString(value string) (SubscriptionState, error) {
 func (ss SubscriptionState) String() string {
 	switch ss {
 	case Active:
-		return "Active"
+		return "active"
 	case Disabled:
-		return "Disabled"
+		return "disabled"
 	case Deleted:
-		return "Deleted"
+		return "deleted"
 	default:
 		return ""
 	}

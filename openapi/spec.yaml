@@ -70,7 +70,6 @@ paths:
         - name: subscription_id
           schema:
             type: string
-            format: uuid
           in: path
       responses:
         "200":

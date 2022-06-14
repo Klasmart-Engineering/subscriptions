@@ -1,7 +1,6 @@
 package api
 
 import (
-	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
 	uuid2 "github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
@@ -121,8 +120,8 @@ func (Impl) PostSubscriptions(ctx echo.Context, monitoringContext *monitoring.Co
 	return nil
 }
 
-func (i Impl) GetSubscriptionsSubscriptionId(ctx echo.Context, monitoringContext *monitoring.Context, apiAuth ApiAuth, subscriptionId openapi_types.UUID) error {
-	exists, subscription, err := db.GetSubscriptionById(monitoringContext, subscriptionId.String())
+func (i Impl) GetSubscriptionsSubscriptionId(ctx echo.Context, monitoringContext *monitoring.Context, apiAuth ApiAuth, subscriptionId string) error {
+	exists, subscription, err := db.GetSubscriptionById(monitoringContext, subscriptionId)
 	if err != nil {
 		monitoringContext.Error("Unable to check if Subscription exists", zap.Error(err))
 		noContentOrLog(monitoringContext, ctx, 500)
