@@ -101,16 +101,10 @@ func (Impl) PostSubscriptions(ctx echo.Context, monitoringContext *monitoring.Co
 		return nil
 	}
 
-	subscriptionState, err := models.SubscriptionStateFromString(request.State)
-	if err != nil || subscriptionState == models.Deleted {
-		noContentOrLog(monitoringContext, ctx, 400)
-		return nil
-	}
-
 	subscription := models.Subscription{
 		Id:        uuid2.New(),
 		AccountId: request.AccountId,
-		State:     subscriptionState,
+		State:     models.Active,
 	}
 
 	err = db.CreateSubscription(monitoringContext, subscription)
