@@ -59,6 +59,8 @@ paths:
           description: "Could not create Subscription because one already exists for the Account"
         "401":
           description: "The API key provided is not recognised"
+        "403":
+          description: "The API key provided is not allowed to call this endpoint"
 components:
   schemas:
     SubscriptionAction:
@@ -112,5 +114,3 @@ components:
               account_id:
                 type: string
                 format: uuid
-              state:
-                type: string

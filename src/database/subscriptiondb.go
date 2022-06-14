@@ -3,8 +3,6 @@ package db
 import (
 	"database/sql"
 	"fmt"
-	uuid2 "github.com/google/uuid"
-	"go.uber.org/zap"
 	"subscriptions/src/models"
 	"subscriptions/src/monitoring"
 )
@@ -20,76 +18,34 @@ func Healthcheck() (bool, error) {
 	return up == 1, nil
 }
 
-func IsValidSubscriptionId(monitoringContext *monitoring.Context, subscriptionId string) (bool, error) {
-	var valid int
-	if err := dbConnection.QueryRowContext(monitoringContext, `
-			SELECT 1 AS up 
-			FROM subscription_account
-			WHERE id = $1`, subscriptionId).Scan(&valid); err != nil {
-		if err == sql.ErrNoRows {
-			return false, fmt.Errorf("no rows returned.Unable to check if subscription is valid %s", err)
-		}
-	}
-
-	return valid == 1, nil
-}
-
-func IsSubscriptionActive(monitoringContext *monitoring.Context, subscriptionId string) (bool, error) {
-	var state string
-	if err := dbConnection.QueryRowContext(monitoringContext, `
-			SELECT ss.name 
-			FROM subscription_account sa 
-			JOIN subscription_state ss
-			  ON sa.state = ss.id
-			WHERE sa.id = $1`, subscriptionId).Scan(&state); err != nil {
-		if err == sql.ErrNoRows {
-			return false, fmt.Errorf("unable to check if subscription is active: %s", err)
-		}
-	}
-
-	return state == "Active", nil
-}
-
-func SubscriptionExists(monitoringContext *monitoring.Context, accountId string) (subscriptionId uuid2.UUID, state int, err error) {
-
-	var subId uuid2.UUID
-	var subscriptionState int
-	sqlStatement := `SELECT id, state FROM subscription_account
-						WHERE account_id = $1;`
-
-	err = dbConnection.QueryRowContext(monitoringContext, sqlStatement, accountId).Scan(&subId, &subscriptionState)
+func GetSubscription(monitoringContext *monitoring.Context, accountId string) (exists bool, subscription models.Subscription, err error) {
+	err = dbConnection.GetContext(monitoringContext, &subscription, `
+		SELECT * FROM subscription WHERE account_id = $1`, accountId)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return subId, 0, fmt.Errorf("no rows returned. The subscription does not exist for account %s, %s", accountId, err)
-		} else {
-			monitoringContext.Panic("Unable to verify if subscription exists", zap.Error(err))
+			return false, subscription, nil
 		}
+
+		return false, subscription, err
 	}
 
-	return subId, subscriptionState, nil
+	return true, subscription, nil
 }
 
-func CreateSubscription(monitoringContext *monitoring.Context, accountId string) (uuid uuid2.UUID, err error) {
-	var minutes = 43200 //30 days by default for now
-	var state = 1       // Active by default
+func CreateSubscription(monitoringContext *monitoring.Context, subscription models.Subscription) error {
+	sqlStatement := `INSERT INTO subscription (id, account_id, state)
+						VALUES($1, $2, 1);`
 
-	var subscriptionId uuid2.UUID
-	sqlStatement := `INSERT INTO subscription_account (account_id, run_frequency_minutes, state)
-						VALUES($1, $2, $3) RETURNING id;`
+	_, err := dbConnection.ExecContext(monitoringContext, sqlStatement, subscription.Id, subscription.AccountId)
 
-	err = dbConnection.QueryRowContext(monitoringContext, sqlStatement, accountId, minutes, state).Scan(&subscriptionId)
-	if err != nil {
-		monitoringContext.Panic("Unable to create subscription", zap.Error(err))
-	}
-
-	return subscriptionId, err
+	return err
 }
 
 func UpdateSubscriptionStatus(monitoringContext *monitoring.Context, subscriptionId string, active int) error {
 
 	sqlStatement := `
-			UPDATE subscription_account
+			UPDATE subscription 
 			 SET state = $1
 			WHERE id = $2;`
 
