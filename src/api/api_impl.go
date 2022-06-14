@@ -145,3 +145,26 @@ func (i Impl) GetSubscriptionsSubscriptionId(ctx echo.Context, monitoringContext
 	noContentOrLog(monitoringContext, ctx, 403)
 	return nil
 }
+
+func (Impl) GetSubscriptions(ctx echo.Context, monitoringContext *monitoring.Context, apiAuth ApiAuth, params GetSubscriptionsParams) error {
+	exists, subscription, err := db.GetSubscriptionByAccountId(monitoringContext, params.AccountId)
+	if err != nil {
+		monitoringContext.Error("Unable to check if Subscription exists", zap.Error(err))
+		noContentOrLog(monitoringContext, ctx, 500)
+		return nil
+	}
+
+	if exists && apiAuth.ApiKey != nil || (apiAuth.Jwt != nil && apiAuth.Jwt.SubscriptionId == subscription.Id.String()) {
+		jsonContentOrLog(monitoringContext, ctx, 200, []Subscription{
+			{
+				AccountId: subscription.AccountId,
+				Id:        subscription.Id,
+				State:     subscription.State.String(),
+			},
+		})
+		return nil
+	}
+
+	jsonContentOrLog(monitoringContext, ctx, 200, []Subscription{})
+	return nil
+}

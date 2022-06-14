@@ -9,13 +9,13 @@ paths:
       description: Returns whether the application is healthy (connected to dependencies)
       responses:
         "200":
-          $ref: '#/components/responses/ApplicationStateResponse'
+          $ref: "#/components/responses/ApplicationStateResponse"
   /liveness:
     get:
       description: Returns whether the application is running
       responses:
         "200":
-          $ref: '#/components/responses/ApplicationStateResponse'
+          $ref: "#/components/responses/ApplicationStateResponse"
   /subscription-types:
     get:
       description: Get the available types of Subscription
@@ -27,7 +27,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/SubscriptionType'
+                  $ref: "#/components/schemas/SubscriptionType"
   /subscription-actions:
     get:
       description: Get the available Subscription actions
@@ -39,13 +39,13 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/SubscriptionAction'
+                  $ref: "#/components/schemas/SubscriptionAction"
   /subscriptions:
     post:
       description: Create a Subscription
       x-auth-api-key: create-subscription
       requestBody:
-        $ref: '#/components/requestBodies/CreateSubscriptionRequest'
+        $ref: "#/components/requestBodies/CreateSubscriptionRequest"
       responses:
         "201":
           description: "Successfully created a Subscription"
@@ -57,6 +57,29 @@ paths:
                 description: "Location of the created resource"
         "409":
           description: "Could not create Subscription because one already exists for the Account"
+        "401":
+          description: "The API key provided is not recognised"
+        "403":
+          description: "The API key provided is not allowed to call this endpoint"
+    get:
+      description: Search for a Subscription
+      x-auth-api-key: get-subscription
+      x-auth-jwt: true
+      parameters:
+        - name: account_id
+          schema:
+            type: string
+          in: query
+          required: true
+      responses:
+        "200":
+          description: "Results from search for Subscription"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Subscription"
         "401":
           description: "The API key provided is not recognised"
         "403":
@@ -77,7 +100,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Subscription'
+                $ref: "#/components/schemas/Subscription"
         "404":
           description: "Subscription does not exist"
         "401":
