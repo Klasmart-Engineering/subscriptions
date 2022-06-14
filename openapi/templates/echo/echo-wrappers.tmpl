@@ -165,7 +165,7 @@ func (w *ServerInterfaceWrapper) {{.OperationId}} (ctx echo.Context) error {
         apiAuth := ApiAuth {}
     {{end}}
     {{if ne (printf "%s" (index .Spec.ExtensionProps.Extensions "x-auth-api-key")) "%!s(<nil>)"}}
-        bearerToken := strings.Replace(ctx.Request().Header.Get("Authorization"), "Bearer ", "", 1)
+        bearerToken := strings.Replace(ctx.Request().Header.Get("X-Api-Key"), "Bearer ", "", 1)
         keyMatched, permissionMatched, clientName := security.CheckApiKey(monitoringContext, bearerToken, {{printf "%s" (index .Spec.ExtensionProps.Extensions "x-auth-api-key")}})
 
         if keyMatched && permissionMatched {
