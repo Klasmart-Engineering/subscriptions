@@ -32,7 +32,7 @@ func TestCreateSubscriptionWithInvalidAPIKeyReturns401(t *testing.T) {
 	resp, err := apiClient.PostSubscriptions(context.Background(), api.PostSubscriptionsJSONRequestBody{
 		AccountId: uuid.MustParse("be372162-c0a0-4903-a9e1-a0b372bb1de9"),
 	}, func(ctx context.Context, req *http.Request) error {
-		req.Header.Add("Authorization", "Bearer 12345")
+		req.Header.Add("X-Api-Key", "Bearer 12345")
 		return nil
 	})
 	if err != nil {
@@ -50,7 +50,7 @@ func TestCreateSubscriptionWithApiKeyWithoutPermissionReturns403(t *testing.T) {
 	resp, err := apiClient.PostSubscriptions(context.Background(), api.PostSubscriptionsJSONRequestBody{
 		AccountId: uuid.MustParse("be372162-c0a0-4903-a9e1-a0b372bb1de9"),
 	}, func(ctx context.Context, req *http.Request) error {
-		req.Header.Add("Authorization", "Bearer valid-key-no-permission")
+		req.Header.Add("X-Api-Key", "Bearer valid-key-no-permission")
 		return nil
 	})
 	if err != nil {
@@ -69,7 +69,7 @@ func TestCreateSubscriptionDuplicateReturns409(t *testing.T) {
 	resp, err := apiClient.PostSubscriptions(context.Background(), api.PostSubscriptionsJSONRequestBody{
 		AccountId: uuid.MustParse("be372162-c0a0-4903-a9e1-a0b372bb1de9"),
 	}, func(ctx context.Context, req *http.Request) error {
-		req.Header.Add("Authorization", "Bearer valid-key-with-permission")
+		req.Header.Add("X-Api-Key", "Bearer valid-key-with-permission")
 		return nil
 	})
 	if err != nil {
@@ -87,7 +87,7 @@ func TestCreateSubscriptionReturns201(t *testing.T) {
 	resp, err := apiClient.PostSubscriptions(context.Background(), api.PostSubscriptionsJSONRequestBody{
 		AccountId: uuid.MustParse("be372162-c0a0-4903-a9e1-a0b372bb1de9"),
 	}, func(ctx context.Context, req *http.Request) error {
-		req.Header.Add("Authorization", "Bearer valid-key-with-permission")
+		req.Header.Add("X-Api-Key", "Bearer valid-key-with-permission")
 		return nil
 	})
 	if err != nil {
