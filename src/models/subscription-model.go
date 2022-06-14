@@ -51,3 +51,16 @@ func SubscriptionStateFromString(value string) (SubscriptionState, error) {
 		return Active, errors.New("unknown subscription state: " + value)
 	}
 }
+
+func (ss SubscriptionState) String() string {
+	switch ss {
+	case Active:
+		return "Active"
+	case Disabled:
+		return "Disabled"
+	case Deleted:
+		return "Deleted"
+	default:
+		return ""
+	}
+}

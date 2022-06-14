@@ -233,12 +233,6 @@ func handlerPointer(handler echo.HandlerFunc) uintptr {
 	return reflect.ValueOf(handler).Pointer()
 }
 
-func noContentOrLog(monitoringContext *monitoring.Context, ctx echo.Context, status int) {
-	if err := ctx.NoContent(status); err != nil {
-		monitoringContext.Error("Could not write status code response", zap.Error(err))
-	}
-}
-
 type ApiAuth struct {
 	ApiKey *ApiKeyAuth
 	Jwt *JwtAuth
