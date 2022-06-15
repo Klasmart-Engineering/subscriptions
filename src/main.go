@@ -34,7 +34,7 @@ func startServer(ctx context.Context) {
 		activeConfig.NewRelicConfig.Enabled,
 		activeConfig.NewRelicConfig.TracerEnabled)
 
-	setupDatabase()
+	go setupDatabase()
 	defer db.Close()
 
 	monitoring.GlobalContext.Info("Starting Server",
@@ -62,16 +62,22 @@ func startServer(ctx context.Context) {
 }
 
 func setupDatabase() {
-	activeConfig := config.GetConfig()
+	for {
+		activeConfig := config.GetConfig()
 
-	err := db.Initialize(
-		activeConfig.Database.User,
-		activeConfig.Database.Password,
-		activeConfig.Database.DatabaseName,
-		activeConfig.Database.Host,
-		activeConfig.Database.Port)
+		err := db.Initialize(
+			activeConfig.Database.User,
+			activeConfig.Database.Password,
+			activeConfig.Database.DatabaseName,
+			activeConfig.Database.Host,
+			activeConfig.Database.Port)
 
-	if err != nil {
-		monitoring.GlobalContext.Fatal("Could not set up database", zap.Error(err))
+		if err != nil {
+			monitoring.GlobalContext.Error("Could not set up database", zap.Error(err))
+			time.Sleep(1 * time.Minute)
+			continue
+		}
+
+		return
 	}
 }
