@@ -18,9 +18,24 @@ func Healthcheck() (bool, error) {
 	return up == 1, nil
 }
 
-func GetSubscription(monitoringContext *monitoring.Context, accountId string) (exists bool, subscription models.Subscription, err error) {
+func GetSubscriptionByAccountId(monitoringContext *monitoring.Context, accountId string) (exists bool, subscription models.Subscription, err error) {
 	err = dbConnection.GetContext(monitoringContext, &subscription, `
 		SELECT * FROM subscription WHERE account_id = $1`, accountId)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, subscription, nil
+		}
+
+		return false, subscription, err
+	}
+
+	return true, subscription, nil
+}
+
+func GetSubscriptionById(monitoringContext *monitoring.Context, id string) (exists bool, subscription models.Subscription, err error) {
+	err = dbConnection.GetContext(monitoringContext, &subscription, `
+		SELECT * FROM subscription WHERE id = $1`, id)
 
 	if err != nil {
 		if err == sql.ErrNoRows {

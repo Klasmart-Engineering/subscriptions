@@ -1,8 +1,6 @@
 package api
 
 import (
-	"fmt"
-	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
 	uuid2 "github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
@@ -91,7 +89,7 @@ func (Impl) GetSubscriptionTypes(ctx echo.Context, monitoringContext *monitoring
 }
 
 func (Impl) PostSubscriptions(ctx echo.Context, monitoringContext *monitoring.Context, apiAuth ApiAuth, request CreateSubscriptionRequest) error {
-	exists, _, err := db.GetSubscription(monitoringContext, request.AccountId.String())
+	exists, _, err := db.GetSubscriptionByAccountId(monitoringContext, request.AccountId.String())
 	if err != nil {
 		monitoringContext.Error("Unable to check if Subscription already exists", zap.Error(err))
 		noContentOrLog(monitoringContext, ctx, 500)
@@ -122,10 +120,51 @@ func (Impl) PostSubscriptions(ctx echo.Context, monitoringContext *monitoring.Co
 	return nil
 }
 
-func (i Impl) GetSubscriptionsSubscriptionId(ctx echo.Context, monitoringContext *monitoring.Context, apiAuth ApiAuth, subscriptionId openapi_types.UUID) error {
-	monitoringContext.Info(fmt.Sprintf("Api Auth %+v", apiAuth))
-	monitoringContext.Info(fmt.Sprintf("Api Key %+v", apiAuth.ApiKey))
-	monitoringContext.Info(fmt.Sprintf("Jwt %+v", apiAuth.Jwt))
+func (i Impl) GetSubscriptionsSubscriptionId(ctx echo.Context, monitoringContext *monitoring.Context, apiAuth ApiAuth, subscriptionId string) error {
+	exists, subscription, err := db.GetSubscriptionById(monitoringContext, subscriptionId)
+	if err != nil {
+		monitoringContext.Error("Unable to check if Subscription exists", zap.Error(err))
+		noContentOrLog(monitoringContext, ctx, 500)
+		return nil
+	}
 
+	if !exists {
+		noContentOrLog(monitoringContext, ctx, 404)
+		return nil
+	}
+
+	if apiAuth.ApiKey != nil || (apiAuth.Jwt != nil && apiAuth.Jwt.SubscriptionId == subscription.Id.String()) {
+		jsonContentOrLog(monitoringContext, ctx, 200, Subscription{
+			AccountId: subscription.AccountId,
+			Id:        subscription.Id,
+			State:     subscription.State.String(),
+		})
+		return nil
+	}
+
+	noContentOrLog(monitoringContext, ctx, 403)
+	return nil
+}
+
+func (Impl) GetSubscriptions(ctx echo.Context, monitoringContext *monitoring.Context, apiAuth ApiAuth, params GetSubscriptionsParams) error {
+	exists, subscription, err := db.GetSubscriptionByAccountId(monitoringContext, params.AccountId)
+	if err != nil {
+		monitoringContext.Error("Unable to check if Subscription exists", zap.Error(err))
+		noContentOrLog(monitoringContext, ctx, 500)
+		return nil
+	}
+
+	if exists && apiAuth.ApiKey != nil || (apiAuth.Jwt != nil && apiAuth.Jwt.SubscriptionId == subscription.Id.String()) {
+		jsonContentOrLog(monitoringContext, ctx, 200, []Subscription{
+			{
+				AccountId: subscription.AccountId,
+				Id:        subscription.Id,
+				State:     subscription.State.String(),
+			},
+		})
+		return nil
+	}
+
+	jsonContentOrLog(monitoringContext, ctx, 200, []Subscription{})
 	return nil
 }
