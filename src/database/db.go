@@ -55,6 +55,7 @@ func Initialize(username, password, database, host string, port int) error {
 	}
 
 	migrateDatabase(dbConnection.DB)
+	seedDatabase(dbConnection.DB)
 
 	return nil
 }

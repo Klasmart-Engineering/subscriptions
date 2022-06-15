@@ -7,7 +7,8 @@
     "Port": 5432,
     "User": "postgres",
     "Password": "t35tP455w0rd",
-    "DatabaseName": "subscriptions"
+    "DatabaseName": "subscriptions",
+    "Seed": false
   },
   "Logging": {
     "DevelopmentLogger": true
