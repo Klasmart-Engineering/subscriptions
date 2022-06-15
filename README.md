@@ -101,4 +101,23 @@ Endpoint boilerplate is generated from openapi-spec.yaml.
 make openapi-generate
 ```
 
-This generates src/api/api.gen.go.  This contains an interface which you need to implement in api_impl.go
+This generates src/api/api.gen.go.  This contains an interface which you need to implement in api_impl.go.
+
+There are two extensions to the openapi format:
+ - x-auth-api-key - this takes a permission name as the value
+ - x-auth-jwt - this takes true as the value
+
+If one or both of these are set on an endpoint, auth will be enforced on that endpoint.
+
+JWT tokens are passed in the Authorization header, we don't validate these in the app (as that is the responsibility of a gateway plugin) 
+so during development you can provide an arbitrary JWT.  You can generate one with the following Javascript:
+
+```
+const header = '{"alg": "HS256","typ": "JWT"}'
+
+const body = '{"sub": "sub-blabla","name": "Somebody","iat": 123456,"subscription_id": "a9de93fc-2d13-44dd-9272-da7f8c17d155","android_id": "07ff00e4-c1a5-4683-9fcb-613a734d8d3f"}'
+
+console.info(btoa(header).replace("=", "") + "." + btoa(body).replace("=", "") + "." + btoa("invalid signature").replace("=", ""))
+```
+
+Api Keys are passed in the X-Api-Key header, we do validate these.  When running locally an API key of 'apikey123' is added automatically.
