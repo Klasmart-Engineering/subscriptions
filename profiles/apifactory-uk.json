@@ -1,0 +1,24 @@
+{
+  "Server": {
+    "Port": 8080
+  },
+  "Database": {
+    "Host": "postgres",
+    "Port": 5432,
+    "User": "postgres",
+    "Password": "t35tP455w0rd",
+    "DatabaseName": "subscriptions"
+  },
+  "Logging": {
+    "DevelopmentLogger": true
+  },
+  "NewRelicConfig": {
+    "EntityName": "subscriptions-service-apifactory-uk",
+    "Enabled": false,
+    "LicenseKey": "newrelic_license_keynewrelic_license_key",
+    "TracerEnabled": false
+  },
+  "AuthConfig": {
+    "ApiKeyCacheMs": 60000
+  }
+}
