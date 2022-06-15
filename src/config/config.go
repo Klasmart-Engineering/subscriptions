@@ -42,6 +42,7 @@ type databaseConfig struct {
 	User         string
 	Password     string
 	DatabaseName string
+	Seed         bool
 }
 
 type authConfig struct {
