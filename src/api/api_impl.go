@@ -170,7 +170,7 @@ func (Impl) GetSubscriptions(ctx echo.Context, monitoringContext *monitoring.Con
 }
 
 func (i Impl) PatchSubscriptionsSubscriptionId(ctx echo.Context, monitoringContext *monitoring.Context, apiAuth ApiAuth, request PatchSubscriptionRequest, subscriptionId string) error {
-	exists, _, err := db.GetSubscriptionById(monitoringContext, subscriptionId)
+	exists, subscription, err := db.GetSubscriptionById(monitoringContext, subscriptionId)
 	if err != nil {
 		monitoringContext.Error("Unable to check if Subscription exists", zap.Error(err))
 		noContentOrLog(monitoringContext, ctx, 500)
@@ -186,11 +186,11 @@ func (i Impl) PatchSubscriptionsSubscriptionId(ctx echo.Context, monitoringConte
 
 	if err != nil {
 		monitoringContext.Error("Unable to get subscription state", zap.Error(err))
-		noContentOrLog(monitoringContext, ctx, 500)
+		noContentOrLog(monitoringContext, ctx, 400)
 		return nil
 	}
 
-	if apiAuth.Jwt != nil {
+	if apiAuth.Jwt != nil && apiAuth.Jwt.AccountId == subscription.AccountId.String() {
 		err := db.UpdateSubscriptionStatus(monitoringContext, subscriptionId, subscriptionState)
 
 		if err != nil {
