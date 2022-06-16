@@ -21,5 +21,6 @@ COPY --from=build-env /go/bin/dlv /
 COPY --from=build-env /subscriptions /app/subscriptions
 COPY --from=build-env /dockerdev/profiles /app/profiles
 COPY --from=build-env /dockerdev/database/migrations /app/database/migrations
+COPY --from=build-env /dockerdev/database/seed.sql /app/database/seed.sql
 
 CMD ["/dlv", "--listen=:40000", "--headless=true", "--continue=true", "--api-version=2", "--accept-multiclient", "exec", "./subscriptions"]

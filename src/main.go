@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"subscriptions/src/api"
 	"subscriptions/src/config"
+	"subscriptions/src/cron"
 	db "subscriptions/src/database"
 	"subscriptions/src/monitoring"
 	"subscriptions/src/utils"
@@ -35,6 +36,7 @@ func startServer(ctx context.Context) {
 		activeConfig.NewRelicConfig.TracerEnabled)
 
 	go setupDatabase()
+	cron.StartCronJobs()
 	defer db.Close()
 
 	monitoring.GlobalContext.Info("Starting Server",
