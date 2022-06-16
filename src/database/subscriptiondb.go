@@ -57,14 +57,14 @@ func CreateSubscription(monitoringContext *monitoring.Context, subscription mode
 	return err
 }
 
-func UpdateSubscriptionStatus(monitoringContext *monitoring.Context, subscriptionId string, active int) error {
+func UpdateSubscriptionStatus(monitoringContext *monitoring.Context, subscriptionId string, state models.SubscriptionState) error {
 
 	sqlStatement := `
 			UPDATE subscription 
 			 SET state = $1
 			WHERE id = $2;`
 
-	_, err := dbConnection.ExecContext(monitoringContext, sqlStatement, &active, &subscriptionId)
+	_, err := dbConnection.ExecContext(monitoringContext, sqlStatement, &state, &subscriptionId)
 	if err != nil {
 		return err
 	}

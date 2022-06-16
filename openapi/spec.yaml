@@ -107,6 +107,23 @@ paths:
           description: "The API key provided is not recognised"
         "403":
           description: "The API key provided is not allowed to call this endpoint"
+    patch:
+      description: Patch a subscription state. Set to Active/Disabled
+      x-auth-jwt: true
+      parameters:
+        - name: subscription_id
+          schema:
+            type: string
+          in: path
+      requestBody:
+        $ref: "#/components/requestBodies/PatchSubscriptionRequest"
+      responses:
+        "200":
+          description: "OK response"
+        "404":
+          description: "Subscription does not exist"
+        "403":
+          description: "subscription does not belong to the account making the request."
 components:
   schemas:
     SubscriptionAction:
@@ -174,3 +191,15 @@ components:
               account_id:
                 type: string
                 format: uuid
+    PatchSubscriptionRequest:
+      description: Request to patch a Subscription
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - state
+            properties:
+              state:
+                type: string

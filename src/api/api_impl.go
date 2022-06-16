@@ -168,3 +168,40 @@ func (Impl) GetSubscriptions(ctx echo.Context, monitoringContext *monitoring.Con
 	jsonContentOrLog(monitoringContext, ctx, 200, []Subscription{})
 	return nil
 }
+
+func (i Impl) PatchSubscriptionsSubscriptionId(ctx echo.Context, monitoringContext *monitoring.Context, apiAuth ApiAuth, request PatchSubscriptionRequest, subscriptionId string) error {
+	exists, _, err := db.GetSubscriptionById(monitoringContext, subscriptionId)
+	if err != nil {
+		monitoringContext.Error("Unable to check if Subscription exists", zap.Error(err))
+		noContentOrLog(monitoringContext, ctx, 500)
+		return nil
+	}
+
+	if !exists {
+		noContentOrLog(monitoringContext, ctx, 404)
+		return nil
+	}
+
+	subscriptionState, err := models.SubscriptionStateFromString(request.State)
+
+	if err != nil {
+		monitoringContext.Error("Unable to get subscription state", zap.Error(err))
+		noContentOrLog(monitoringContext, ctx, 500)
+		return nil
+	}
+
+	if apiAuth.Jwt != nil {
+		err := db.UpdateSubscriptionStatus(monitoringContext, subscriptionId, subscriptionState)
+
+		if err != nil {
+			monitoringContext.Error("Unable to get update subscription state", zap.Error(err))
+			noContentOrLog(monitoringContext, ctx, 500)
+			return nil
+		}
+
+		noContentOrLog(monitoringContext, ctx, 200)
+	}
+
+	noContentOrLog(monitoringContext, ctx, 403)
+	return nil
+}
