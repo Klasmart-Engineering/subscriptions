@@ -30,7 +30,7 @@ func TestPatchSubscriptionReturns200(t *testing.T) {
 	responsePatch, err := apiClient.PatchSubscriptionsSubscriptionId(context.Background(), subscriptionId, api.PatchSubscriptionsSubscriptionIdJSONRequestBody{
 		State: "active",
 	}, func(ctx context.Context, req *http.Request) error {
-		req.Header.Add("Authorization", "Bearer eyJhbGciOiAiSFMyNTYiLCJ0eXAiOiAiSldUIn0.eyJzdWIiOiAic3ViLWJsYWJsYSIsIm5hbWUiOiAiU29tZWJvZHkiLCJpYXQiOiAxMjM0NTYsInN1YnNjcmlwdGlvbl9pZCI6ICJjNjgzZDZjZC1kZjY5LTQwYWEtYjI2OC01OGU3MjM3ZTMyMjUiLCJhbmRyb2lkX2lkIjogIjA3ZmYwMGU0LWMxYTUtNDY4My05ZmNiLTYxM2E3MzRkOGQzZiJ9.aW52YWxpZCBzaWduYXR1cmU")
+		req.Header.Add("Authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzdWItYmxhYmxhIiwibmFtZSI6IlNvbWVib2R5IiwiaWF0IjoxMjM0NTYsInN1YnNjcmlwdGlvbl9pZCI6ImM2ODNkNmNkLWRmNjktNDBhYS1iMjY4LTU4ZTcyMzdlMzIyNSIsImFuZHJvaWRfaWQiOiIwN2ZmMDBlNC1jMWE1LTQ2ODMtOWZjYi02MTNhNzM0ZDhkM2YiLCJhY2NvdW50X2lkIjoiYmUzNzIxNjItYzBhMC00OTAzLWE5ZTEtYTBiMzcyYmIxZGU5In0.xVyEIES9mZlwDIbWQYkIrpZ2viNSfI_bgRZ4pQjqBA4")
 		req.Header.Add("X-Api-Key", "Bearer valid-key-with-permission")
 		return nil
 	})
