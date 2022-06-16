@@ -45,10 +45,6 @@ func seedDatabase(db *sql.DB) {
 
 func readFile(file string) string {
 	content, err := os.ReadFile(file)
-	dir, _ := os.ReadDir("./database")
-	for _, entry := range dir {
-		monitoring.GlobalContext.Info("entry: " + entry.Name() + " - " + entry.Type().String())
-	}
 	if err != nil {
 		monitoring.GlobalContext.Fatal("Could not read: "+file, zap.Error(err))
 	}
