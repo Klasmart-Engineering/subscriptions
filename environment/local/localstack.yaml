@@ -19,7 +19,7 @@ spec:
             - containerPort: 4566
           env:
             - name: SERVICES
-              value: "kinesis"
+              value: "s3"
             - name: EAGER_SERVICE_LOADING
               value: "true"
           volumeMounts:
@@ -57,5 +57,5 @@ metadata:
 data:
   setup.sh: |
     set -x
-    awslocal kinesis create-stream --region eu-west-1 --stream-name factory-gateway-access --shard-count  1
+    #TODO
     set +x

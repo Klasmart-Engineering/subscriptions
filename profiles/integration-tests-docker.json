@@ -21,5 +21,12 @@
   },
   "AuthConfig": {
     "ApiKeyCacheMs": 1
+  },
+  "AwsConfig": {
+    "ManuallySpecify": true,
+    "Region": "eu-west-1",
+    "AccessKeyId": "test",
+    "AccessKeySecret": "test",
+    "Endpoint": "http://localstack:4566"
   }
 }

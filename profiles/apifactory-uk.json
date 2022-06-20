@@ -21,5 +21,8 @@
   },
   "AuthConfig": {
     "ApiKeyCacheMs": 60000
+  },
+  "AwsConfig": {
+    "ManuallySpecify": false
   }
 }
