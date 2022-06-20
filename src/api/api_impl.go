@@ -17,16 +17,16 @@ var Implementation = &Impl{}
 var _ ServerInterface = (*Impl)(nil)
 
 func (Impl) GetHealthcheck(ctx echo.Context, monitoringContext *monitoring.Context) error {
-	//healthcheck, err := db.Healthcheck()
-	//if err != nil || !healthcheck {
-	//	err = ctx.JSON(500, ApplicationStateResponse{
-	//		Up:      false,
-	//		Details: "Could not query the database",
-	//	})
-	//	return err
-	//}
+	healthcheck, err := db.Healthcheck()
+	if err != nil || !healthcheck {
+		err = ctx.JSON(500, ApplicationStateResponse{
+			Up:      false,
+			Details: "Could not query the database",
+		})
+		return err
+	}
 
-	err := ctx.JSON(200, ApplicationStateResponse{
+	err = ctx.JSON(200, ApplicationStateResponse{
 		Up:      true,
 		Details: "Successfully connected to the database",
 	})
