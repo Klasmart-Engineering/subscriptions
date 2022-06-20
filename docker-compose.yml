@@ -8,6 +8,7 @@ services:
       - "8070:8080"
     depends_on:
       - postgres
+      - localstack
     networks:
       subscription-network:
     environment:
@@ -48,6 +49,16 @@ services:
       - environment/local/.env
     networks:
       subscription-network:
+
+  localstack:
+    image: localstack/localstack:0.14.3
+    restart: "no"
+    environment:
+      - SERVICES=kinesis
+      - EAGER_SERVICE_LOADING=true
+    ports:
+      - "4568:4566"
+
 volumes:
   postgres-data:
 networks:

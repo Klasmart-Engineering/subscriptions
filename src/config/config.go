@@ -19,6 +19,7 @@ type config struct {
 	Database       databaseConfig
 	NewRelicConfig newRelicConfig
 	AuthConfig     authConfig
+	AwsConfig      awsConfig
 }
 
 type serverConfig struct {
@@ -47,6 +48,14 @@ type databaseConfig struct {
 
 type authConfig struct {
 	ApiKeyCacheMs int
+}
+
+type awsConfig struct {
+	Region          string
+	ManuallySpecify bool
+	AccessKeyId     *string
+	AccessKeySecret *string
+	Endpoint        *string
 }
 
 func LoadProfile(name string) {

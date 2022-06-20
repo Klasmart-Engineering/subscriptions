@@ -8,6 +8,7 @@ services:
       - "8020:8080"
     depends_on:
       - postgres
+      - localstack
     environment:
       - PROFILE=integration-tests-docker
     restart: "no"
@@ -23,3 +24,11 @@ services:
       - "1334:5432"
     env_file:
       - ./environment/integration/.env
+  localstack:
+    image: localstack/localstack:0.14.3
+    restart: "no"
+    environment:
+      - SERVICES=kinesis
+      - EAGER_SERVICE_LOADING=true
+    ports:
+      - "4568:4566"

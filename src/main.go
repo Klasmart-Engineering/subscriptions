@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"strconv"
 	"subscriptions/src/api"
+	"subscriptions/src/aws"
 	"subscriptions/src/config"
 	"subscriptions/src/cron"
 	db "subscriptions/src/database"
@@ -36,8 +37,10 @@ func startServer(ctx context.Context) {
 		activeConfig.NewRelicConfig.TracerEnabled)
 
 	go setupDatabase()
-	cron.StartCronJobs()
 	defer db.Close()
+
+	cron.StartCronJobs()
+	aws.SetupAWS()
 
 	monitoring.GlobalContext.Info("Starting Server",
 		zap.String("profile", config.GetProfileName()),
