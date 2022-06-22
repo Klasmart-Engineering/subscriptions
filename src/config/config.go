@@ -21,6 +21,7 @@ type config struct {
 	AuthConfig     authConfig
 	AwsConfig      awsConfig
 	BucketConfig   bucketConfig
+	Testing        bool
 }
 
 type serverConfig struct {
