@@ -24,7 +24,7 @@ jobs:
     - name: Run unit tests
       run: make test-unit
     - name: Run integration tests
-      run: make test-integration
+      run: curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash && make test-integration
   build-push-docker-image:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: test
