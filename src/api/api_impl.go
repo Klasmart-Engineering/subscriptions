@@ -29,7 +29,7 @@ func (i Impl) GetSubscriptionsSubscriptionIdUsageReportsUsageReportId(ctx echo.C
 		return nil
 	}
 
-	if apiAuth.Jwt == nil || apiAuth.Jwt.AccountId == subscription.AccountId.String() {
+	if apiAuth.Jwt == nil || apiAuth.Jwt.AccountId != subscription.AccountId.String() {
 		noContentOrLog(monitoringContext, ctx, 403)
 		return nil
 	}
@@ -45,9 +45,8 @@ func (i Impl) GetSubscriptionsSubscriptionIdUsageReportsUsageReportId(ctx echo.C
 	return nil
 }
 
-func (i Impl) GetSubscriptionsSubscriptionIdUsageReports(ctx echo.Context, monitoringContext *monitoring.Context, subscriptionId string) error {
-
-	exists, _, err := db.GetSubscriptionById(monitoringContext, subscriptionId)
+func (i Impl) GetSubscriptionsSubscriptionIdUsageReports(ctx echo.Context, monitoringContext *monitoring.Context, apiAuth ApiAuth, subscriptionId string) error {
+	exists, subscription, err := db.GetSubscriptionById(monitoringContext, subscriptionId)
 	if err != nil {
 		monitoringContext.Error("Unable to check if Subscription exists", zap.Error(err))
 		noContentOrLog(monitoringContext, ctx, 500)
@@ -56,6 +55,11 @@ func (i Impl) GetSubscriptionsSubscriptionIdUsageReports(ctx echo.Context, monit
 
 	if !exists {
 		noContentOrLog(monitoringContext, ctx, 404)
+		return nil
+	}
+
+	if apiAuth.Jwt == nil || apiAuth.Jwt.AccountId != subscription.AccountId.String() {
+		noContentOrLog(monitoringContext, ctx, 403)
 		return nil
 	}
 

@@ -24,6 +24,8 @@ paths:
         in: path
     get:
       description: Returns a list of usage reports for a given subscription
+      x-auth-jwt: true
+      x-auth-api-key: get-subscription
       responses:
         "200":
           description: Array of Usage Report dates
