@@ -7,6 +7,7 @@ import (
 	db "subscriptions/src/database"
 	"subscriptions/src/models"
 	"subscriptions/src/monitoring"
+	"time"
 )
 
 type Impl struct{}
@@ -105,6 +106,7 @@ func (Impl) PostSubscriptions(ctx echo.Context, monitoringContext *monitoring.Co
 		Id:        uuid2.New(),
 		AccountId: request.AccountId,
 		State:     models.Active,
+		CreatedAt: time.Now(),
 	}
 
 	err = db.CreateSubscription(monitoringContext, subscription)

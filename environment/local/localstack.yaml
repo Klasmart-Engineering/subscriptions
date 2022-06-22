@@ -57,5 +57,6 @@ metadata:
 data:
   setup.sh: |
     set -x
-    #TODO
+    awslocal s3 mb s3://factory-access-log-bucket --region eu-west-1
+    awslocal s3api put-bucket-acl --bucket factory-access-log-bucket --acl public-read-write --region eu-west-1
     set +x

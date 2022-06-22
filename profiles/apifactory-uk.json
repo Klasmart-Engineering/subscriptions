@@ -24,5 +24,8 @@
   },
   "AwsConfig": {
     "ManuallySpecify": false
+  },
+  "BucketConfig": {
+    "AccessLogBucket": "access-logs-factory"
   }
 }

@@ -55,7 +55,9 @@ func setupWithManuallyProvidedConfig() {
 		}
 	}
 
-	S3Client = s3.NewFromConfig(cfg)
+	S3Client = s3.NewFromConfig(cfg, func(options *s3.Options) {
+		options.UsePathStyle = true
+	})
 	AthenaClient = athena.NewFromConfig(cfg)
 }
 

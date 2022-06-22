@@ -12,6 +12,8 @@ RUN go get -d -v ./...
 
 RUN go build -o ./subscriptions-app ./src/main.go
 
+RUN mkdir "/tmp/dayfiles"
+
 EXPOSE 8080
 
 CMD [ "./subscriptions-app" ]
