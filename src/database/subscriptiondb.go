@@ -49,10 +49,10 @@ func GetSubscriptionById(monitoringContext *monitoring.Context, id string) (exis
 }
 
 func CreateSubscription(monitoringContext *monitoring.Context, subscription models.Subscription) error {
-	sqlStatement := `INSERT INTO subscription (id, account_id, state)
-						VALUES($1, $2, 1);`
+	sqlStatement := `INSERT INTO subscription (id, account_id, state, created_at)
+						VALUES($1, $2, 1, $3);`
 
-	_, err := dbConnection.ExecContext(monitoringContext, sqlStatement, subscription.Id, subscription.AccountId)
+	_, err := dbConnection.ExecContext(monitoringContext, sqlStatement, subscription.Id, subscription.AccountId, subscription.CreatedAt)
 
 	return err
 }
@@ -106,4 +106,13 @@ func GetAllSubscriptionActions(monitoringContext *monitoring.Context) (*models.S
 		list.Actions = append(list.Actions, action)
 	}
 	return list, nil
+}
+
+func GetSubscriptionsPage(monitoringContext *monitoring.Context, pageSize int, offset int) ([]models.Subscription, error) {
+	var result []models.Subscription
+
+	err := dbConnection.SelectContext(monitoringContext, &result,
+		fmt.Sprintf("SELECT * FROM subscription LIMIT %d OFFSET %d", pageSize, offset))
+
+	return result, err
 }

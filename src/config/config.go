@@ -20,6 +20,7 @@ type config struct {
 	NewRelicConfig newRelicConfig
 	AuthConfig     authConfig
 	AwsConfig      awsConfig
+	BucketConfig   bucketConfig
 }
 
 type serverConfig struct {
@@ -56,6 +57,10 @@ type awsConfig struct {
 	AccessKeyId     *string
 	AccessKeySecret *string
 	Endpoint        *string
+}
+
+type bucketConfig struct {
+	AccessLogBucket string
 }
 
 func LoadProfile(name string) {
