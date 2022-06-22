@@ -31,6 +31,6 @@
     "Endpoint": "http://localstack:4566"
   },
   "BucketConfig": {
-    "AccessLogBucket": "factory-access-log-bucket"
+    "AccessLogBucket": "factory-access-log-bucket-int-test"
   }
 }

@@ -1,6 +1,8 @@
 package cron
 
 import (
+	"bytes"
+	"compress/gzip"
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -8,6 +10,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 	"io"
+	"io/ioutil"
 	"os"
 	"strings"
 	"subscriptions/src/aws"
@@ -163,9 +166,24 @@ continuationLoop:
 				return err
 			}
 
-			all = append(all, "\n"...)
+			gz, err := gzip.NewReader(bytes.NewBuffer(all))
+			if err != nil {
+				monitoring.GlobalContext.Error("Could not create gzip reader for Subscription",
+					zap.Error(err), zap.String("subscriptionId", subscription.Id.String()), zap.Time("day", day))
+				attemptToMarkLastFailure(checkpoint)
+				return err
+			}
 
-			_, err = dayFile.Write(all)
+			ungzipped, err := ioutil.ReadAll(gz)
+			gz.Close()
+			if err != nil {
+				monitoring.GlobalContext.Error("Could not un-gzip object for Subscription",
+					zap.Error(err), zap.String("subscriptionId", subscription.Id.String()), zap.Time("day", day))
+				attemptToMarkLastFailure(checkpoint)
+				return err
+			}
+
+			_, err = dayFile.Write(append(ungzipped, "\n"...))
 			if err != nil {
 				monitoring.GlobalContext.Error("Could not write to day file when attempting to compact into day "+
 					"object for Subscription", zap.Error(err), zap.String("subscriptionId", subscription.Id.String()), zap.Time("day", day))
@@ -256,17 +274,62 @@ func writeDayFileFromTmp(subscription models.Subscription, day time.Time) error 
 		return err
 	}
 
+	handle, err := os.Create(getTmpFileName(subscription, day) + ".gz")
+	if err != nil {
+		monitoring.GlobalContext.Error("Could not open tmp day gz file to write to S3", zap.Error(err))
+		return err
+	}
+
+	zipWriter, err := gzip.NewWriterLevel(handle, 9)
+	if err != nil {
+		monitoring.GlobalContext.Error("Could not create tmp day gz writer to write to S3", zap.Error(err))
+		return err
+	}
+
+	for {
+		buf := make([]byte, 0, 4*1024)
+		n, err := file.Read(buf[:cap(buf)])
+		buf = buf[:n]
+		if n == 0 {
+			if err == nil {
+				continue
+			}
+			if err == io.EOF {
+				break
+			}
+
+		}
+
+		if err != nil && err != io.EOF {
+			monitoring.GlobalContext.Error("Could not read day file into gz writer to write to S3", zap.Error(err))
+			return err
+		}
+
+		_, err = zipWriter.Write(buf)
+		if err != nil && err != io.EOF {
+			monitoring.GlobalContext.Error("Could not write to zip writer", zap.Error(err))
+			return err
+		}
+	}
+
+	zipWriter.Close()
+	handle.Close()
+
 	dayFileUploader := manager.NewUploader(aws.S3Client, func(u *manager.Uploader) {
 		u.PartSize = 0
 		u.Concurrency = 1
 		u.LeavePartsOnError = false
 	})
 
+	gzippedFile, err := os.Open(getTmpFileName(subscription, day) + ".gz")
+
 	_, err = dayFileUploader.Upload(monitoring.GlobalContext, &s3.PutObjectInput{
 		Bucket: utils.StringPtr(config.GetConfig().BucketConfig.AccessLogBucket),
-		Key:    utils.StringPtr(fmt.Sprintf("%s/%s/day", subscription.Id.String(), day.Format("2006/01/02"))),
-		Body:   file,
+		Key:    utils.StringPtr(fmt.Sprintf("%s/%s/day.gz", subscription.Id.String(), day.Format("2006/01/02"))),
+		Body:   gzippedFile,
 	})
+
+	gzippedFile.Close()
 
 	removeErr := os.Remove(getTmpFileName(subscription, day))
 	if removeErr != nil {
