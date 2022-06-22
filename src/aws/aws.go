@@ -1,7 +1,9 @@
 package aws
 
 import (
+	"context"
 	"github.com/aws/aws-sdk-go-v2/aws"
+	cfg "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/athena"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -60,10 +62,15 @@ func setupWithManuallyProvidedConfig() {
 }
 
 func setupWithDefaults() {
-	cfg := aws.Config{
-		Region: config.GetConfig().AwsConfig.Region,
+	configuration, err := cfg.LoadDefaultConfig(context.Background())
+	if err != nil {
+		panic(err)
 	}
 
-	S3Client = s3.NewFromConfig(cfg)
-	AthenaClient = athena.NewFromConfig(cfg)
+	S3Client = s3.NewFromConfig(configuration, func(o *s3.Options) {
+		o.Region = config.GetConfig().AwsConfig.Region
+	})
+	AthenaClient = athena.NewFromConfig(configuration, func(o *athena.Options) {
+		o.Region = config.GetConfig().AwsConfig.Region
+	})
 }
