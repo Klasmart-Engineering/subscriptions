@@ -13,6 +13,35 @@ type Impl struct{}
 
 var Implementation = &Impl{}
 
+func (i Impl) PatchSubscriptionsSubscriptionIdUsageReportsUsageReportId(ctx echo.Context, monitoringContext *monitoring.Context, apiAuth ApiAuth, subscriptionId string, usageReportId string) error {
+	exists, subscription, err := db.GetSubscriptionById(monitoringContext, subscriptionId)
+	if err != nil {
+		monitoringContext.Error("Unable to check if Subscription exists", zap.Error(err))
+		noContentOrLog(monitoringContext, ctx, 500)
+		return nil
+	}
+
+	if !exists {
+		noContentOrLog(monitoringContext, ctx, 404)
+		return nil
+	}
+
+	if apiAuth.Jwt == nil || apiAuth.Jwt.AccountId != subscription.AccountId.String() {
+		noContentOrLog(monitoringContext, ctx, 403)
+		return nil
+	}
+
+	//TEMP until S3 & Athena implementation
+	state := UsageReportState{State: "processing"}
+
+	err = ctx.JSON(200, state)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 //Your IDE should tell you here if you're not implementing all the endpoints
 var _ ServerInterface = (*Impl)(nil)
 

@@ -63,6 +63,22 @@ paths:
           description: "Subscription does not exist"
         "403":
           description: "The API key provided is not allowed to call this endpoint"
+    patch:
+      description: Trigger (Re)Processing of Usage Report By Id
+      x-auth-jwt: true
+      responses:
+        "200":
+          description: state
+          content:
+            application/json:
+              schema:
+                type: object
+                items:
+                  $ref: "#/components/schemas/UsageReportState"
+        "404":
+          description: "Subscription does not exist"
+        "403":
+          description: "The API key provided is not allowed to call this endpoint"
   /subscription-types:
     get:
       description: Get the available types of Subscription
@@ -193,6 +209,12 @@ components:
         id:
           type: integer
         name:
+          type: string
+    UsageReportState:
+      required:
+        - state
+      properties:
+        state:
           type: string
     Subscription:
       required:
