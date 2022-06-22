@@ -5,6 +5,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/go-co-op/gocron"
+	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 	"io"
 	"os"
@@ -27,6 +28,17 @@ func StartCronJobs() {
 	}
 
 	scheduler.StartAsync()
+}
+func ForceCronJob(c echo.Context) error {
+	switch c.QueryParam("cronName") {
+	case "access-log-compaction":
+		CompactionCron()
+		c.NoContent(200)
+	default:
+		c.NoContent(404)
+	}
+
+	return nil
 }
 
 func AttemptToLockThenDo(cronName string, action func()) func() {
@@ -70,6 +82,11 @@ func processSubscription(subscription models.Subscription) {
 	var end = utils.ToDay(time.Now())
 	if !checkpointExists || checkpoint.SucceededAt == nil {
 		currentDay = utils.ToDay(subscription.CreatedAt)
+		checkpoint = models.CompactionCheckpoint{
+			SubscriptionId: subscription.Id,
+			SucceededAt:    nil,
+			FailedAt:       nil,
+		}
 	} else {
 		currentDay = utils.ToDay(*checkpoint.SucceededAt)
 	}

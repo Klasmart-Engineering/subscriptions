@@ -50,6 +50,10 @@ func startServer(ctx context.Context) {
 	e.Use(middleware.RecoverWithConfig(middleware.RecoverConfig{StackSize: 1 << 10, LogLevel: log.ERROR}))
 	api.RegisterHandlers(e, api.Implementation)
 
+	if config.GetConfig().Testing {
+		e.Router().Add("POST", "/cron", cron.ForceCronJob)
+	}
+
 	go func() {
 		if err := e.Start(":" + strconv.Itoa(activeConfig.Server.Port)); err != nil && err != http.ErrServerClosed {
 			monitoring.GlobalContext.Fatal("Shutting down Server")

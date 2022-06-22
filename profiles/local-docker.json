@@ -1,4 +1,5 @@
 {
+  "Testing": false,
   "Server": {
     "Port": 8080
   },
