@@ -28,7 +28,7 @@ services:
     image: localstack/localstack:0.14.3
     restart: "no"
     environment:
-      - SERVICES=kinesis
+      - SERVICES=s3
       - EAGER_SERVICE_LOADING=true
     ports:
       - "4568:4566"
