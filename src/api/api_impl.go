@@ -16,6 +16,63 @@ var Implementation = &Impl{}
 //Your IDE should tell you here if you're not implementing all the endpoints
 var _ ServerInterface = (*Impl)(nil)
 
+func (i Impl) GetSubscriptionsSubscriptionIdUsageReportsUsageReportId(ctx echo.Context, monitoringContext *monitoring.Context, apiAuth ApiAuth, subscriptionId string, usageReportId string) error {
+	exists, subscription, err := db.GetSubscriptionById(monitoringContext, subscriptionId)
+	if err != nil {
+		monitoringContext.Error("Unable to check if Subscription exists", zap.Error(err))
+		noContentOrLog(monitoringContext, ctx, 500)
+		return nil
+	}
+
+	if !exists {
+		noContentOrLog(monitoringContext, ctx, 404)
+		return nil
+	}
+
+	if apiAuth.Jwt == nil || apiAuth.Jwt.AccountId == subscription.AccountId.String() {
+		noContentOrLog(monitoringContext, ctx, 403)
+		return nil
+	}
+
+	//TEMP until S3 & Athena implementation
+	report := UsageReport{Id: uuid2.New(), From: "1640995200", To: "1640995200", ReportCompletedAt: "1640991100", State: "ready", Products: Product{ProductName: "Content API"}}
+
+	err = ctx.JSON(200, report)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (i Impl) GetSubscriptionsSubscriptionIdUsageReports(ctx echo.Context, monitoringContext *monitoring.Context, subscriptionId string) error {
+
+	exists, _, err := db.GetSubscriptionById(monitoringContext, subscriptionId)
+	if err != nil {
+		monitoringContext.Error("Unable to check if Subscription exists", zap.Error(err))
+		noContentOrLog(monitoringContext, ctx, 500)
+		return nil
+	}
+
+	if !exists {
+		noContentOrLog(monitoringContext, ctx, 404)
+		return nil
+	}
+
+	//TEMP until S3 & Athena implementation
+	response := make([]UsageReports, 3)
+	for i := 0; i < 3; i++ {
+		response[i] = UsageReports{Id: uuid2.New(), From: "1640995200", To: "1643673599"}
+	}
+
+	err = ctx.JSON(200, response)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (Impl) GetHealthcheck(ctx echo.Context, monitoringContext *monitoring.Context) error {
 	//healthcheck, err := db.Healthcheck()
 	//if err != nil || !healthcheck {

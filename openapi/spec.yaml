@@ -16,6 +16,51 @@ paths:
       responses:
         "200":
           $ref: "#/components/responses/ApplicationStateResponse"
+  /subscriptions/{subscription_id}/usage-reports:
+    parameters:
+      - name: subscription_id
+        schema:
+          type: string
+        in: path
+    get:
+      description: Returns a list of usage reports for a given subscription
+      responses:
+        "200":
+          description: Array of Usage Report dates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UsageReports"
+        "404":
+          description: "Subscription does not exist"
+  /subscriptions/{subscription_id}/usage-reports/{usage_report_id}:
+    parameters:
+      - name: subscription_id
+        schema:
+          type: string
+        in: path
+      - name: usage_report_id
+        schema:
+          type: string
+        in: path
+    get:
+      description: Returns a usage reports for a given subscription and usage report id
+      x-auth-jwt: true
+      responses:
+        "200":
+          description: Usage Report data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UsageReport"
+        "404":
+          description: "Subscription does not exist"
+        "403":
+          description: "The API key provided is not allowed to call this endpoint"
   /subscription-types:
     get:
       description: Get the available types of Subscription
@@ -161,6 +206,47 @@ components:
           format: uuid
         state:
           type: string
+    UsageReports:
+      required:
+        - id
+        - from
+        - to
+      properties:
+        id:
+          type: string
+          format: uuid
+        from:
+          type: string
+        to:
+          type: string
+    UsageReport:
+      required:
+        - id
+        - from
+        - to
+        - report_completed_at
+        - state
+        - products
+      properties:
+        id:
+          type: string
+          format: uuid
+        from:
+          type: string
+        to:
+          type: string
+        report_completed_at:
+          type: string
+        state:
+          type: string
+        products:
+          $ref: "#/components/schemas/Product"
+    Product:
+      required:
+        - product_name
+      properties:
+        product_name:
+          type: string
   responses:
     ApplicationStateResponse:
       description: Successful healthcheck or liveness response
@@ -176,6 +262,17 @@ components:
                 type: boolean
               details:
                 type: string
+    UsageReportsResponse:
+      description: Response of usage reports for given subscription
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - reports
+            properties:
+              reports:
+                type: array
   requestBodies:
     CreateSubscriptionRequest:
       description: Request to create a new Subscription
