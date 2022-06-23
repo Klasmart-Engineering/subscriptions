@@ -25,10 +25,10 @@ import (
 func StartCronJobs() {
 	monitoring.GlobalContext.Info("Scheduling cron jobs")
 	scheduler := gocron.NewScheduler(time.UTC)
-	_, err := scheduler.Every(1).Day().At("00:20").Do(AttemptToLockThenDo("access-log-compaction", CompactionCron))
-	if err != nil {
-		monitoring.GlobalContext.Fatal("Unable to schedule access log compaction", zap.Error(err))
-	}
+	//_, err := scheduler.Every(1).Day().At("00:20").Do(AttemptToLockThenDo("access-log-compaction", CompactionCron))
+	//if err != nil {
+	//	monitoring.GlobalContext.Fatal("Unable to schedule access log compaction", zap.Error(err))
+	//}
 
 	scheduler.StartAsync()
 }
