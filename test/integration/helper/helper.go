@@ -298,7 +298,7 @@ func ReadS3Object(t *testing.T, bucket string, objectName string) []byte {
 			Key:    &objectName,
 		})
 		if err != nil {
-			t.Fatal("Unable to get object", err)
+			return err
 		}
 
 		all, err = io.ReadAll(object.Body)
