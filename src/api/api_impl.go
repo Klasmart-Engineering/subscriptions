@@ -7,6 +7,7 @@ import (
 	uuid2 "github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
+	"strings"
 	"subscriptions/src/aws"
 	db "subscriptions/src/database"
 	"subscriptions/src/models"
@@ -309,7 +310,10 @@ func (i Impl) GetTestAthena(ctx echo.Context, monitoringContext *monitoring.Cont
 		return nil
 	}
 
-	createTableDDL := fmt.Sprintf(`CREATE EXTERNAL TABLE IF NOT EXISTS usage_report_%s_%s (
+	tableName := fmt.Sprintf("usage_report_%s_%s",
+		strings.ReplaceAll(*params.SubscriptionId, "-", "_"), time.Now().Format("2006_01"))
+
+	createTableDDL := fmt.Sprintf(`CREATE EXTERNAL TABLE IF NOT EXISTS %s (
 		id STRING,
 		occurred_at BIGINT,
 		product STRING,
@@ -318,8 +322,8 @@ func (i Impl) GetTestAthena(ctx echo.Context, monitoringContext *monitoring.Cont
 		android_id STRING,
 		subscription_id STRING
 	) ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe' 
-	LOCATION 's3://subscriptions-uk-apifactory-api-usage-firehose/%s/%s'`,
-		*params.SubscriptionId, time.Now().Format("2006_01"), *params.SubscriptionId, time.Now().Format("2006/01"))
+	LOCATION 's3://subscriptions-uk-apifactory-api-usage-firehose/%s/%s/'`,
+		tableName, *params.SubscriptionId, time.Now().Format("2006/01"))
 
 	ddlResult, err := aws.AthenaClient.StartQueryExecution(monitoringContext, &athena.StartQueryExecutionInput{
 		QueryString: &createTableDDL,
@@ -336,7 +340,7 @@ func (i Impl) GetTestAthena(ctx echo.Context, monitoringContext *monitoring.Cont
 
 	monitoringContext.Info("Finished create table DDL: " + *ddlResult.QueryExecutionId)
 
-	monthlyUsageQuery := fmt.Sprintf("SELECT COUNT(1) FROM usage_report_%s_%s")
+	monthlyUsageQuery := fmt.Sprintf("SELECT COUNT(1) FROM %s", tableName)
 
 	queryResult, err := aws.AthenaClient.StartQueryExecution(monitoringContext, &athena.StartQueryExecutionInput{
 		QueryString: &monthlyUsageQuery,
