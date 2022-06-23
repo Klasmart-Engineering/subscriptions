@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: go-app
+  labels:
+    app: go-app
+spec:
+  selector:
+    matchLabels:
+      app: go-app
+  template:
+    metadata:
+      labels:
+        app: go-app
+    spec:
+      containers:
+        - name: go-app
+          image: local-go-image
+          ports:
+            - containerPort: 8080
+            - containerPort: 40000
+          env:
+          - name: PROFILE
+            value: integration-tests-docker
+          readinessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /healthcheck
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /liveness
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    service: go-service
+  name: go-service
+  namespace: subscriptions
+spec:
+  ports:
+    - name: "8080"
+      port: 8080
+      targetPort: 8080
+  selector:
+    app: go-app
+status:
+  loadBalancer: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    service: go-debug
+  name: go-debug
+  namespace: subscriptions
+spec:
+  ports:
+    - protocol: TCP
+      name: "40000"
+      port: 40000
+      targetPort: 40000
+  selector:
+    app: go-app
+status:
+  loadBalancer: {}
