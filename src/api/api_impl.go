@@ -323,6 +323,7 @@ func (i Impl) GetTestAthena(ctx echo.Context, monitoringContext *monitoring.Cont
 
 	ddlResult, err := aws.AthenaClient.StartQueryExecution(monitoringContext, &athena.StartQueryExecutionInput{
 		QueryString: &createTableDDL,
+		WorkGroup:   utils.StringPtr("subscriptions-uk-apifactory-subscriptions-athena"),
 		ResultConfiguration: &types.ResultConfiguration{
 			OutputLocation: utils.StringPtr("s3://subscriptions-uk-apifactory-subscriptions-athena/"),
 		},
@@ -339,6 +340,7 @@ func (i Impl) GetTestAthena(ctx echo.Context, monitoringContext *monitoring.Cont
 
 	queryResult, err := aws.AthenaClient.StartQueryExecution(monitoringContext, &athena.StartQueryExecutionInput{
 		QueryString: &monthlyUsageQuery,
+		WorkGroup:   utils.StringPtr("subscriptions-uk-apifactory-subscriptions-athena"),
 		ResultConfiguration: &types.ResultConfiguration{
 			OutputLocation: utils.StringPtr("s3://subscriptions-uk-apifactory-subscriptions-athena/"),
 		},
