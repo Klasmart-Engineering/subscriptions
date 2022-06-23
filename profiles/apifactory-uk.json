@@ -23,6 +23,7 @@
     "ApiKeyCacheMs": 60000
   },
   "AwsConfig": {
-    "ManuallySpecify": false
+    "ManuallySpecify": false,
+    "Region": "eu-west-2"
   }
 }
