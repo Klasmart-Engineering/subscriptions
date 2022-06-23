@@ -1,7 +1,9 @@
 package services
 
 import (
+	"github.com/aws/aws-sdk-go-v2/service/athena"
 	uuid2 "github.com/google/uuid"
+	"subscriptions/src/aws"
 	db "subscriptions/src/database"
 	"subscriptions/src/models"
 	"subscriptions/src/monitoring"
@@ -39,6 +41,53 @@ func GenerateMissingUsageReports(monitoringContext *monitoring.Context, subscrip
 	}
 
 	return currentUsageReports, nil
+}
+
+func CheckUsageReportInstances(monitoringContext *monitoring.Context, usageReportId uuid2.UUID) ([]models.UsageReportInstance, error) {
+	usageReportInstances, err := db.GetUsageReportInstances(monitoringContext, usageReportId)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, instance := range usageReportInstances {
+		if instance.CompletedAt == nil {
+			execution, err := aws.AthenaClient.GetQueryExecution(monitoringContext, &athena.GetQueryExecutionInput{
+				QueryExecutionId: &instance.AthenaQueryId,
+			})
+			if err != nil {
+				return nil, err
+			}
+
+			if execution.QueryExecution.Status.CompletionDateTime != nil {
+				results, err := aws.AthenaClient.GetQueryResults(monitoringContext, &athena.GetQueryResultsInput{
+					QueryExecutionId: &instance.AthenaQueryId,
+				})
+				if err != nil {
+					return nil, err
+				}
+
+				//TODO: Wrap inserting the rows and updating the completedat in a database transaction
+				for _, row := range results.ResultSet.Rows {
+					err = db.InsertUsageReportInstanceProduct(monitoringContext, models.UsageReportInstanceProduct{
+						UsageReportInstanceId: instance.Id,
+						Product:               *row.Data[0].VarCharValue,
+						Value:                 utils.MustParseInt(*row.Data[1].VarCharValue),
+					})
+					if err != nil {
+						return nil, err
+					}
+				}
+
+				instance.CompletedAt = utils.TimePtr(time.Now())
+				err = db.UpdateUsageReportInstance(monitoringContext, instance)
+				if err != nil {
+					return nil, err
+				}
+			}
+		}
+	}
+
+	return usageReportInstances, nil
 }
 
 func getMissingMonths(usageReports []models.UsageReport, subscription models.Subscription) []missingMonth {

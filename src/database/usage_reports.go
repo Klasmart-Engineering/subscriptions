@@ -1,6 +1,7 @@
 package db
 
 import (
+	"database/sql"
 	uuid2 "github.com/google/uuid"
 	"subscriptions/src/models"
 	"subscriptions/src/monitoring"
@@ -13,6 +14,23 @@ func GetUsageReportsForSubscription(monitoringContext *monitoring.Context, subsc
 		SELECT * FROM usage_report WHERE subscription_id = $1`, subscriptionId)
 
 	return result, err
+}
+
+func GetUsageReport(monitoringContext *monitoring.Context, usageReportId uuid2.UUID) (exists bool, entity models.UsageReport, err error) {
+	var result models.UsageReport
+
+	err = dbConnection.GetContext(monitoringContext, &result, `
+		SELECT * FROM usage_report WHERE id = $1`, usageReportId)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, result, nil
+		}
+
+		return false, result, err
+	}
+
+	return true, result, nil
 }
 
 func InsertUsageReport(monitoringContext *monitoring.Context, usageReport models.UsageReport) error {
