@@ -24,7 +24,7 @@ jobs:
     - name: Run unit tests
       run: make test-unit
     - name: Run integration tests
-      run: curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash && curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" | bash &&  sudo apt install kubectx && make test-integration
+      run: curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash && curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" | bash &&  make test-integration
   build-push-docker-image:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: test
