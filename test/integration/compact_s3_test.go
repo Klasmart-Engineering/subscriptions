@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"subscriptions/test/integration/helper"
 	"testing"
+	"time"
 )
 
 func TestSmallFilesAreCompactedForEachDaySinceSubscriptionWasCreatedWhenNoCompactionCheckpoint(t *testing.T) {
@@ -21,6 +22,8 @@ func TestSmallFilesAreCompactedForEachDaySinceSubscriptionWasCreatedWhenNoCompac
 	if err != nil {
 		t.Fatal("Failed to call cron trigger endpoint", err)
 	}
+
+	time.Sleep(time.Second * 5) //todo: replace with exp back off if this works
 
 	gzippedBytes := helper.ReadS3Object(t, "factory-access-log-bucket-int-test", "14fb4f6e-1298-4ca5-989d-00b56a2c6564/2022/06/18/day.gz")
 
