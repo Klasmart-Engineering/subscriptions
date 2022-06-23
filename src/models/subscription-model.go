@@ -3,6 +3,7 @@ package models
 import (
 	"errors"
 	uuid2 "github.com/google/uuid"
+	"time"
 )
 
 type SubscriptionType struct {
@@ -31,6 +32,7 @@ type Subscription struct {
 	Id        uuid2.UUID
 	AccountId uuid2.UUID
 	State     SubscriptionState
+	CreatedAt time.Time
 }
 
 type SubscriptionState int
