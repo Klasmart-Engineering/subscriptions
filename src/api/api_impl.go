@@ -12,6 +12,7 @@ import (
 	db "subscriptions/src/database"
 	"subscriptions/src/models"
 	"subscriptions/src/monitoring"
+	"subscriptions/src/services"
 	"subscriptions/src/utils"
 	"time"
 )
@@ -42,7 +43,7 @@ func (i Impl) GetSubscriptionsSubscriptionIdUsageReportsUsageReportId(ctx echo.C
 	}
 
 	//TEMP until S3 & Athena implementation
-	report := UsageReport{Id: uuid2.New(), From: "1640995200", To: "1640995200", ReportCompletedAt: "1640991100", State: "ready", Products: Product{ProductName: "Content API"}}
+	report := UsageReport{Id: uuid2.New(), From: 1640995200, To: 1640995200, ReportCompletedAt: "1640991100", State: "ready", Products: Product{ProductName: "Content API"}}
 
 	err = ctx.JSON(200, report)
 	if err != nil {
@@ -70,10 +71,19 @@ func (i Impl) GetSubscriptionsSubscriptionIdUsageReports(ctx echo.Context, monit
 		return nil
 	}
 
-	//TEMP until S3 & Athena implementation
-	response := make([]UsageReports, 3)
-	for i := 0; i < 3; i++ {
-		response[i] = UsageReports{Id: uuid2.New(), From: "1640995200", To: "1643673599"}
+	usageReports, err := services.GenerateMissingUsageReports(monitoringContext, subscription)
+	if err != nil {
+		monitoringContext.Error("Unable to get usage reports for Subscription",
+			zap.Error(err), zap.String("subscriptionId", subscriptionId))
+		noContentOrLog(monitoringContext, ctx, 500)
+		return nil
+	}
+
+	response := make([]UsageReports, len(usageReports))
+	for i, report := range usageReports {
+		from := utils.GetMonth(report.Year, report.Month)
+		to := utils.ToNextMonth(from)
+		response[i] = UsageReports{Id: report.Id, From: from.Unix(), To: to.Unix()}
 	}
 
 	err = ctx.JSON(200, response)

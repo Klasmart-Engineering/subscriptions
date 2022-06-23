@@ -251,9 +251,11 @@ components:
           type: string
           format: uuid
         from:
-          type: string
+          type: integer
+          format: int64
         to:
-          type: string
+          type: integer
+          format: int64
     UsageReport:
       required:
         - id
@@ -267,9 +269,11 @@ components:
           type: string
           format: uuid
         from:
-          type: string
+          type: integer
+          format: int64
         to:
-          type: string
+          type: integer
+          format: int64
         report_completed_at:
           type: string
         state:
