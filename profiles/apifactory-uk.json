@@ -1,4 +1,5 @@
 {
+  "Testing": false,
   "Server": {
     "Port": 8080
   },
@@ -25,5 +26,8 @@
   "AwsConfig": {
     "ManuallySpecify": false,
     "Region": "eu-west-2"
+  },
+  "BucketConfig": {
+    "AccessLogBucket": "access-logs-factory"
   }
 }

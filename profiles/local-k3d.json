@@ -1,4 +1,5 @@
 {
+  "Testing": true,
   "Server": {
     "Port": 8080
   },
@@ -28,5 +29,8 @@
     "AccessKeyId": "test",
     "AccessKeySecret": "test",
     "Endpoint": "http://localstack:4566"
+  },
+  "BucketConfig": {
+    "AccessLogBucket": "factory-access-log-bucket"
   }
 }
