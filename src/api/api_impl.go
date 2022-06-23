@@ -325,9 +325,12 @@ func (i Impl) GetTestAthena(ctx echo.Context, monitoringContext *monitoring.Cont
 	LOCATION 's3://subscriptions-uk-apifactory-api-usage-firehose/%s/%s/'`,
 		tableName, *params.SubscriptionId, time.Now().Format("2006/01"))
 
-	ddlResult, err := aws.AthenaClient.StartQueryExecution(monitoringContext, &athena.StartQueryExecutionInput{
+	ddlResponse, err := aws.AthenaClient.StartQueryExecution(monitoringContext, &athena.StartQueryExecutionInput{
 		QueryString: &createTableDDL,
-		WorkGroup:   utils.StringPtr("subscriptions-uk-apifactory-subscriptions-athena"),
+		QueryExecutionContext: &types.QueryExecutionContext{
+			Database: utils.StringPtr("subscriptions_api_usage"),
+		},
+		WorkGroup: utils.StringPtr("subscriptions-uk-apifactory-subscriptions-athena"),
 		ResultConfiguration: &types.ResultConfiguration{
 			OutputLocation: utils.StringPtr("s3://subscriptions-uk-apifactory-subscriptions-athena/"),
 		},
@@ -338,13 +341,28 @@ func (i Impl) GetTestAthena(ctx echo.Context, monitoringContext *monitoring.Cont
 		return nil
 	}
 
-	monitoringContext.Info("Finished create table DDL: " + *ddlResult.QueryExecutionId)
+	monitoringContext.Info("Finished create table DDL: " + *ddlResponse.QueryExecutionId)
+
+	ddlResults, err := aws.AthenaClient.GetQueryResults(monitoringContext, &athena.GetQueryResultsInput{
+		QueryExecutionId: ddlResponse.QueryExecutionId,
+	})
+
+	if err != nil {
+		monitoringContext.Error("Something went wrong getting create table results", zap.Error(err))
+		ctx.NoContent(500)
+		return nil
+	}
+
+	monitoringContext.Info(fmt.Sprintf("ddl results %+v", ddlResults))
 
 	monthlyUsageQuery := fmt.Sprintf("SELECT COUNT(1) FROM %s", tableName)
 
-	queryResult, err := aws.AthenaClient.StartQueryExecution(monitoringContext, &athena.StartQueryExecutionInput{
+	queryResponse, err := aws.AthenaClient.StartQueryExecution(monitoringContext, &athena.StartQueryExecutionInput{
 		QueryString: &monthlyUsageQuery,
-		WorkGroup:   utils.StringPtr("subscriptions-uk-apifactory-subscriptions-athena"),
+		QueryExecutionContext: &types.QueryExecutionContext{
+			Database: utils.StringPtr("subscriptions_api_usage"),
+		},
+		WorkGroup: utils.StringPtr("subscriptions-uk-apifactory-subscriptions-athena"),
 		ResultConfiguration: &types.ResultConfiguration{
 			OutputLocation: utils.StringPtr("s3://subscriptions-uk-apifactory-subscriptions-athena/"),
 		},
@@ -355,7 +373,19 @@ func (i Impl) GetTestAthena(ctx echo.Context, monitoringContext *monitoring.Cont
 		return nil
 	}
 
-	monitoringContext.Info("Finished query: " + *queryResult.QueryExecutionId)
+	monitoringContext.Info("Finished query: " + *queryResponse.QueryExecutionId)
+
+	queryResults, err := aws.AthenaClient.GetQueryResults(monitoringContext, &athena.GetQueryResultsInput{
+		QueryExecutionId: queryResponse.QueryExecutionId,
+	})
+
+	if err != nil {
+		monitoringContext.Error("Something went wrong getting query results", zap.Error(err))
+		ctx.NoContent(500)
+		return nil
+	}
+
+	monitoringContext.Info(fmt.Sprintf("query results %+v", queryResults))
 
 	ctx.NoContent(200)
 	return nil
