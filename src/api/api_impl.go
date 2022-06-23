@@ -1,46 +1,23 @@
 package api
 
 import (
+	"fmt"
+	"github.com/aws/aws-sdk-go-v2/service/athena"
+	"github.com/aws/aws-sdk-go-v2/service/athena/types"
 	uuid2 "github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
+	"subscriptions/src/aws"
 	db "subscriptions/src/database"
 	"subscriptions/src/models"
 	"subscriptions/src/monitoring"
+	"subscriptions/src/utils"
+	"time"
 )
 
 type Impl struct{}
 
 var Implementation = &Impl{}
-
-func (i Impl) PatchSubscriptionsSubscriptionIdUsageReportsUsageReportId(ctx echo.Context, monitoringContext *monitoring.Context, apiAuth ApiAuth, subscriptionId string, usageReportId string) error {
-	exists, subscription, err := db.GetSubscriptionById(monitoringContext, subscriptionId)
-	if err != nil {
-		monitoringContext.Error("Unable to check if Subscription exists", zap.Error(err))
-		noContentOrLog(monitoringContext, ctx, 500)
-		return nil
-	}
-
-	if !exists {
-		noContentOrLog(monitoringContext, ctx, 404)
-		return nil
-	}
-
-	if apiAuth.Jwt == nil || apiAuth.Jwt.AccountId != subscription.AccountId.String() {
-		noContentOrLog(monitoringContext, ctx, 403)
-		return nil
-	}
-
-	//TEMP until S3 & Athena implementation
-	state := UsageReportState{State: "processing"}
-
-	err = ctx.JSON(200, state)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
 
 //Your IDE should tell you here if you're not implementing all the endpoints
 var _ ServerInterface = (*Impl)(nil)
@@ -99,6 +76,35 @@ func (i Impl) GetSubscriptionsSubscriptionIdUsageReports(ctx echo.Context, monit
 	}
 
 	err = ctx.JSON(200, response)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (i Impl) PatchSubscriptionsSubscriptionIdUsageReportsUsageReportId(ctx echo.Context, monitoringContext *monitoring.Context, apiAuth ApiAuth, subscriptionId string, usageReportId string) error {
+	exists, subscription, err := db.GetSubscriptionById(monitoringContext, subscriptionId)
+	if err != nil {
+		monitoringContext.Error("Unable to check if Subscription exists", zap.Error(err))
+		noContentOrLog(monitoringContext, ctx, 500)
+		return nil
+	}
+
+	if !exists {
+		noContentOrLog(monitoringContext, ctx, 404)
+		return nil
+	}
+
+	if apiAuth.Jwt == nil || apiAuth.Jwt.AccountId != subscription.AccountId.String() {
+		noContentOrLog(monitoringContext, ctx, 403)
+		return nil
+	}
+
+	//TEMP until S3 & Athena implementation
+	state := UsageReportState{State: "processing"}
+
+	err = ctx.JSON(200, state)
 	if err != nil {
 		return err
 	}
@@ -293,5 +299,58 @@ func (i Impl) PatchSubscriptionsSubscriptionId(ctx echo.Context, monitoringConte
 	}
 
 	noContentOrLog(monitoringContext, ctx, 403)
+	return nil
+}
+
+func (i Impl) GetTestAthena(ctx echo.Context, monitoringContext *monitoring.Context, params GetTestAthenaParams) error {
+	if _, err := uuid2.Parse(*params.SubscriptionId); err != nil {
+		monitoringContext.Error("Could not parse subscription id query param", zap.Error(err))
+		ctx.NoContent(400)
+		return nil
+	}
+
+	createTableDDL := fmt.Sprintf(`CREATE EXTERNAL TABLE IF NOT EXISTS usage_report_%s_%s (
+		id STRING,
+		occurred_at BIGINT,
+		product STRING,
+		method STRING,
+		path STRING,
+		android_id STRING,
+		subscription_id STRING
+	) ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe' 
+	LOCATION 's3://subscriptions-uk-apifactory-api-usage-firehose/%s/%s'`,
+		*params.SubscriptionId, time.Now().Format("2006_01"), *params.SubscriptionId, time.Now().Format("2006/01"))
+
+	ddlResult, err := aws.AthenaClient.StartQueryExecution(monitoringContext, &athena.StartQueryExecutionInput{
+		QueryString: &createTableDDL,
+		ResultConfiguration: &types.ResultConfiguration{
+			OutputLocation: utils.StringPtr("s3://subscriptions-uk-apifactory-subscriptions-athena/"),
+		},
+	})
+	if err != nil {
+		monitoringContext.Error("Something went wrong creating table", zap.Error(err))
+		ctx.NoContent(500)
+		return nil
+	}
+
+	monitoringContext.Info("Finished create table DDL: " + *ddlResult.QueryExecutionId)
+
+	monthlyUsageQuery := fmt.Sprintf("SELECT COUNT(1) FROM usage_report_%s_%s")
+
+	queryResult, err := aws.AthenaClient.StartQueryExecution(monitoringContext, &athena.StartQueryExecutionInput{
+		QueryString: &monthlyUsageQuery,
+		ResultConfiguration: &types.ResultConfiguration{
+			OutputLocation: utils.StringPtr("s3://subscriptions-uk-apifactory-subscriptions-athena/"),
+		},
+	})
+	if err != nil {
+		monitoringContext.Error("Something went wrong creating table", zap.Error(err))
+		ctx.NoContent(500)
+		return nil
+	}
+
+	monitoringContext.Info("Finished query: " + *queryResult.QueryExecutionId)
+
+	ctx.NoContent(200)
 	return nil
 }
