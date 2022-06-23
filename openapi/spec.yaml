@@ -187,6 +187,17 @@ paths:
           description: "Subscription does not exist"
         "403":
           description: "subscription does not belong to the account making the request."
+  /test-athena: #TODO: Remove me after testing done
+    parameters:
+      - name: subscription_id
+        schema:
+          type: string
+        in: query
+    get:
+      description: Temporary
+      responses:
+        "200":
+          description: Request accepted
 components:
   schemas:
     SubscriptionAction:
