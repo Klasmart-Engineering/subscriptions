@@ -291,15 +291,30 @@ func putFileS3(t *testing.T, fileName string, s3Location string) {
 }
 
 func ReadS3Object(t *testing.T, bucket string, objectName string) []byte {
-	object, err := s3Client.GetObject(context.Background(), &s3.GetObjectInput{
-		Bucket: &bucket,
-		Key:    &objectName,
-	})
-	if err != nil {
-		t.Fatal("Unable to get object", err)
+	var all []byte
+	var check = func() error {
+		object, err := s3Client.GetObject(context.Background(), &s3.GetObjectInput{
+			Bucket: &bucket,
+			Key:    &objectName,
+		})
+		if err != nil {
+			t.Fatal("Unable to get object", err)
+		}
+
+		all, err = io.ReadAll(object.Body)
+
+		return err
 	}
 
-	all, err := io.ReadAll(object.Body)
+	err := backoff.Retry(check, &backoff.ExponentialBackOff{
+		InitialInterval:     100 * time.Millisecond,
+		RandomizationFactor: 0.5,
+		Multiplier:          1.2,
+		MaxInterval:         20 * time.Second,
+		MaxElapsedTime:      120 * time.Second,
+		Stop:                -1,
+		Clock:               backoff.SystemClock,
+	})
 	if err != nil {
 		t.Fatal("Unable to read object", err)
 	}
