@@ -4,8 +4,8 @@ build:
 test-unit:
 	go test -v ./test/unit/...
 
-test-integration:
-	./scripts/run-integration-tests.sh
+test-integration: kill-k3d setup-k3d
+	./scripts/run-integration-tests-k3d.sh
 
 openapi-generate:
 	./scripts/openapi-generate.sh
