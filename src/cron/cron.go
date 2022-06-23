@@ -58,9 +58,11 @@ func AttemptToLockThenDo(cronName string, action func()) func() {
 	}
 }
 
+const subscriptionsPageSize = 50
+
 func CompactionCron() {
 	subscriptionIdsOffset := 0
-	page, err := db.GetSubscriptionsPage(monitoring.GlobalContext, 50, subscriptionIdsOffset)
+	page, err := db.GetSubscriptionsPage(monitoring.GlobalContext, subscriptionsPageSize, subscriptionIdsOffset)
 	if err != nil {
 		monitoring.GlobalContext.Error("Could not get page of Subscription Ids when attempting to compact into day "+
 			"objects", zap.Error(err))
@@ -68,7 +70,7 @@ func CompactionCron() {
 	}
 
 	for _, subscription := range page {
-		processSubscription(subscription)
+		go processSubscription(subscription)
 	}
 }
 
@@ -122,7 +124,7 @@ func processSubscriptionDay(subscription models.Subscription, checkpoint models.
 
 	dayFile, err := os.Create(dayFileName)
 	if err != nil {
-		monitoring.GlobalContext.Error("Could not open day file", zap.Error(err))
+		monitoring.GlobalContext.Error("Could not create day file", zap.Error(err))
 		return err
 	}
 
