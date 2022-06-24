@@ -21,6 +21,7 @@ type config struct {
 	AuthConfig     authConfig
 	AwsConfig      awsConfig
 	BucketConfig   bucketConfig
+	AthenaConfig   athenaConfig
 	Testing        bool
 }
 
@@ -62,6 +63,13 @@ type awsConfig struct {
 
 type bucketConfig struct {
 	AccessLogBucket string
+}
+
+type athenaConfig struct {
+	InputBucketName  string //subscriptions-uk-apifactory-api-usage-firehose
+	OutputBucketName string //subscriptions-uk-apifactory-subscriptions-athena
+	DatabaseName     string //subscriptions_api_usage
+	WorkGroupName    string //subscriptions-uk-apifactory-subscriptions-athena
 }
 
 func LoadProfile(name string) {

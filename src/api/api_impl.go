@@ -227,6 +227,13 @@ func (i Impl) PatchSubscriptionsSubscriptionIdUsageReportsUsageReportId(ctx echo
 	}
 
 	err = services.CreateReportInstance(monitoringContext, usageReport)
+	if err != nil {
+		monitoringContext.Error("Could not create report instance",
+			zap.String("subscriptionId", subscriptionId), zap.Int("month", usageReport.Month),
+			zap.Int("year", usageReport.Year), zap.Error(err))
+		noContentOrLog(monitoringContext, ctx, 500)
+		return nil
+	}
 
 	jsonContentOrLog(monitoringContext, ctx, 200, UsageReportState{State: "processing"})
 	return nil

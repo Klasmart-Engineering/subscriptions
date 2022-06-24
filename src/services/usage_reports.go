@@ -1,9 +1,16 @@
 package services
 
 import (
+	"errors"
+	"fmt"
 	"github.com/aws/aws-sdk-go-v2/service/athena"
+	"github.com/aws/aws-sdk-go-v2/service/athena/types"
+	"github.com/cenkalti/backoff/v4"
 	uuid2 "github.com/google/uuid"
+	"go.uber.org/zap"
+	"strings"
 	"subscriptions/src/aws"
+	"subscriptions/src/config"
 	db "subscriptions/src/database"
 	"subscriptions/src/models"
 	"subscriptions/src/monitoring"
@@ -17,10 +24,28 @@ type missingMonth struct {
 }
 
 func CreateReportInstance(monitoringContext *monitoring.Context, usageReport models.UsageReport) error {
-	//TODO: Create table if needed
-	//		Create query
-	//		Write into usage report instance table
-	//		Bucket names and all that jazz need parameterising from config rather than hardcoding!
+	err := setupTable(monitoringContext, usageReport)
+	if err != nil {
+		return err
+	}
+
+	reportInstance := models.UsageReportInstance{
+		Id:            uuid2.New(),
+		UsageReportId: usageReport.Id,
+		RequestedAt:   time.Now(),
+		AthenaQueryId: "",
+		CompletedAt:   nil,
+	}
+
+	queryId, err := createInstanceQuery(monitoringContext, usageReport)
+	if err != nil {
+		return err
+	}
+
+	reportInstance.AthenaQueryId = queryId
+	err = db.InsertUsageReportInstance(monitoringContext, reportInstance)
+
+	return err
 }
 
 func GenerateMissingUsageReports(monitoringContext *monitoring.Context, subscription models.Subscription) ([]models.UsageReport, error) {
@@ -124,4 +149,119 @@ func containsMonth(month time.Time, usageReports []models.UsageReport) bool {
 	}
 
 	return false
+}
+
+func setupTable(monitoringContext *monitoring.Context, report models.UsageReport) error {
+	tableName := getTableName(report.SubscriptionId.String(), report.Year, report.Month)
+	s3Location := getS3InputLocation(report.SubscriptionId.String(), report.Year, report.Month)
+
+	createTableDDL := fmt.Sprintf(`CREATE EXTERNAL TABLE IF NOT EXISTS %s (
+		id STRING,
+		occurred_at BIGINT,
+		product STRING,
+		method STRING,
+		path STRING,
+		android_id STRING,
+		subscription_id STRING
+	) ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe' 
+	LOCATION '%s'`, tableName, s3Location)
+
+	ddlResponse, err := aws.AthenaClient.StartQueryExecution(monitoringContext, &athena.StartQueryExecutionInput{
+		QueryString: &createTableDDL,
+		QueryExecutionContext: &types.QueryExecutionContext{
+			Database: &config.GetConfig().AthenaConfig.DatabaseName,
+		},
+		WorkGroup: &config.GetConfig().AthenaConfig.WorkGroupName,
+		ResultConfiguration: &types.ResultConfiguration{
+			OutputLocation: utils.StringPtr(getS3OutputLocation()),
+		},
+	})
+	if err != nil {
+		monitoringContext.Error("Something went wrong issuing create table statement", zap.Error(err))
+		return err
+	}
+
+	err = pollForQueryCompletion(monitoringContext, *ddlResponse.QueryExecutionId)
+	if err != nil {
+		monitoringContext.Error("Something went wrong creating table", zap.Error(err))
+		return err
+	}
+
+	return nil
+}
+
+func createInstanceQuery(monitoringContext *monitoring.Context, report models.UsageReport) (queryId string, err error) {
+	tableName := getTableName(report.SubscriptionId.String(), report.Year, report.Month)
+	monthlyUsageQuery := fmt.Sprintf("SELECT product, COUNT(1) FROM %s GROUP BY product", tableName)
+
+	queryResponse, err := aws.AthenaClient.StartQueryExecution(monitoringContext, &athena.StartQueryExecutionInput{
+		QueryString: &monthlyUsageQuery,
+		QueryExecutionContext: &types.QueryExecutionContext{
+			Database: &config.GetConfig().AthenaConfig.DatabaseName,
+		},
+		WorkGroup: &config.GetConfig().AthenaConfig.WorkGroupName,
+		ResultConfiguration: &types.ResultConfiguration{
+			OutputLocation: utils.StringPtr(getS3OutputLocation()),
+		},
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return *queryResponse.QueryExecutionId, nil
+}
+
+func pollForQueryCompletion(monitoringContext *monitoring.Context, id string) error {
+	failedOrCancelled := false
+	check := func() error {
+		getQueryExecutionOutput, err := aws.AthenaClient.GetQueryExecution(monitoringContext, &athena.GetQueryExecutionInput{
+			QueryExecutionId: &id,
+		})
+		if err != nil {
+			return err
+		}
+
+		state := getQueryExecutionOutput.QueryExecution.Status.State
+
+		if state == types.QueryExecutionStateFailed || state == types.QueryExecutionStateCancelled {
+			failedOrCancelled = true
+			return nil
+		}
+
+		if state == types.QueryExecutionStateSucceeded {
+			return nil
+		}
+
+		return errors.New("query is still queued or running")
+	}
+
+	err := backoff.Retry(check, &backoff.ExponentialBackOff{
+		InitialInterval:     100 * time.Millisecond,
+		RandomizationFactor: 0.5,
+		Multiplier:          1.2,
+		MaxInterval:         5 * time.Second,
+		MaxElapsedTime:      60 * time.Second,
+		Stop:                -1,
+		Clock:               backoff.SystemClock,
+	})
+
+	if failedOrCancelled {
+		return fmt.Errorf("athena query %s was failed or cancelled", id)
+	}
+
+	return err
+}
+
+func getTableName(subscriptionId string, year int, month int) string {
+	return fmt.Sprintf("usage_report_%s_%s",
+		strings.ReplaceAll(subscriptionId, "-", "_"), utils.GetMonth(year, month).Format("2006_01"))
+}
+
+func getS3InputLocation(subscriptionId string, year int, month int) string {
+	return fmt.Sprintf("s3://%s/%s/%s/", config.GetConfig().AthenaConfig.InputBucketName,
+		subscriptionId, utils.GetMonth(year, month).Format("2006/01"))
+}
+
+func getS3OutputLocation() string {
+	return fmt.Sprintf("s3://%s/", config.GetConfig().AthenaConfig.OutputBucketName)
 }
