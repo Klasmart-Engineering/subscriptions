@@ -28,7 +28,7 @@ var _ ServerInterface = (*Impl)(nil)
 func (i Impl) GetSubscriptionsSubscriptionIdUsageReportsUsageReportId(ctx echo.Context, monitoringContext *monitoring.Context, apiAuth ApiAuth, subscriptionId string, usageReportId string) error {
 	usageReportUUID, err := uuid2.Parse(usageReportId)
 	if err != nil {
-		noContentOrLog(monitoringContext, ctx, 400)
+		noContentOrLog(monitoringContext, ctx, http.StatusBadRequest)
 		return nil
 	}
 
@@ -52,24 +52,24 @@ func (i Impl) GetSubscriptionsSubscriptionIdUsageReportsUsageReportId(ctx echo.C
 	usageReportExists, usageReport, err := db.GetUsageReport(monitoringContext, usageReportUUID)
 	if err != nil {
 		monitoringContext.Error("Unable to check if Usage Report exists", zap.Error(err))
-		noContentOrLog(monitoringContext, ctx, 500)
+		noContentOrLog(monitoringContext, ctx, http.StatusInternalServerError)
 		return nil
 	}
 
 	if !usageReportExists {
-		noContentOrLog(monitoringContext, ctx, 404)
+		noContentOrLog(monitoringContext, ctx, http.StatusNotFound)
 		return nil
 	}
 
 	if usageReport.SubscriptionId != subscription.Id {
-		noContentOrLog(monitoringContext, ctx, 403)
+		noContentOrLog(monitoringContext, ctx, http.StatusForbidden)
 		return nil
 	}
 
 	usageReportInstances, err := services.CheckUsageReportInstances(monitoringContext, usageReportUUID)
 	if err != nil {
 		monitoringContext.Error("Unable to get Usage Report instances", zap.Error(err), zap.String("usageReportId", usageReportId))
-		noContentOrLog(monitoringContext, ctx, 500)
+		noContentOrLog(monitoringContext, ctx, http.StatusInternalServerError)
 		return nil
 	}
 
@@ -99,7 +99,7 @@ func (i Impl) GetSubscriptionsSubscriptionIdUsageReportsUsageReportId(ctx echo.C
 		instanceProducts, err := db.GetUsageReportInstanceProducts(monitoringContext, newestCompletedInstance.Id)
 		if err != nil {
 			monitoringContext.Error("Unable to get Usage Report Instance Products", zap.Error(err), zap.String("usageReportInstanceId", newestCompletedInstance.Id.String()))
-			noContentOrLog(monitoringContext, ctx, 500)
+			noContentOrLog(monitoringContext, ctx, http.StatusInternalServerError)
 			return nil
 		}
 
@@ -109,7 +109,7 @@ func (i Impl) GetSubscriptionsSubscriptionIdUsageReportsUsageReportId(ctx echo.C
 			products.Set(product.Product, product.Value)
 		}
 
-		jsonContentOrLog(monitoringContext, ctx, 200, UsageReport{
+		jsonContentOrLog(monitoringContext, ctx, http.StatusOK, UsageReport{
 			Id:                usageReportUUID,
 			From:              from.Unix(),
 			To:                to.Unix(),
@@ -120,7 +120,7 @@ func (i Impl) GetSubscriptionsSubscriptionIdUsageReportsUsageReportId(ctx echo.C
 		return nil
 	}
 
-	jsonContentOrLog(monitoringContext, ctx, 200, UsageReport{
+	jsonContentOrLog(monitoringContext, ctx, http.StatusOK, UsageReport{
 		Id:                usageReportUUID,
 		From:              from.Unix(),
 		To:                to.Unix(),
@@ -153,7 +153,7 @@ func (i Impl) GetSubscriptionsSubscriptionIdUsageReports(ctx echo.Context, monit
 	if err != nil {
 		monitoringContext.Error("Unable to get usage reports for Subscription",
 			zap.Error(err), zap.String("subscriptionId", subscriptionId))
-		noContentOrLog(monitoringContext, ctx, 500)
+		noContentOrLog(monitoringContext, ctx, http.StatusInternalServerError)
 		return nil
 	}
 
@@ -175,7 +175,7 @@ func (i Impl) GetSubscriptionsSubscriptionIdUsageReports(ctx echo.Context, monit
 func (i Impl) PatchSubscriptionsSubscriptionIdUsageReportsUsageReportId(ctx echo.Context, monitoringContext *monitoring.Context, apiAuth ApiAuth, subscriptionId string, usageReportId string) error {
 	usageReportUUID, err := uuid2.Parse(usageReportId)
 	if err != nil {
-		noContentOrLog(monitoringContext, ctx, 400)
+		noContentOrLog(monitoringContext, ctx, http.StatusBadRequest)
 		return nil
 	}
 
@@ -199,30 +199,30 @@ func (i Impl) PatchSubscriptionsSubscriptionIdUsageReportsUsageReportId(ctx echo
 	usageReportExists, usageReport, err := db.GetUsageReport(monitoringContext, usageReportUUID)
 	if err != nil {
 		monitoringContext.Error("Unable to check if Usage Report exists", zap.Error(err))
-		noContentOrLog(monitoringContext, ctx, 500)
+		noContentOrLog(monitoringContext, ctx, http.StatusInternalServerError)
 		return nil
 	}
 
 	if !usageReportExists {
-		noContentOrLog(monitoringContext, ctx, 404)
+		noContentOrLog(monitoringContext, ctx, http.StatusNotFound)
 		return nil
 	}
 
 	if usageReport.SubscriptionId != subscription.Id {
-		noContentOrLog(monitoringContext, ctx, 403)
+		noContentOrLog(monitoringContext, ctx, http.StatusForbidden)
 		return nil
 	}
 
 	usageReportInstances, err := services.CheckUsageReportInstances(monitoringContext, usageReportUUID)
 	if err != nil {
 		monitoringContext.Error("Unable to get Usage Report instances", zap.Error(err), zap.String("usageReportId", usageReportId))
-		noContentOrLog(monitoringContext, ctx, 500)
+		noContentOrLog(monitoringContext, ctx, http.StatusInternalServerError)
 		return nil
 	}
 
 	for _, instance := range usageReportInstances {
 		if instance.CompletedAt == nil {
-			jsonContentOrLog(monitoringContext, ctx, 200, UsageReportState{State: "processing"})
+			jsonContentOrLog(monitoringContext, ctx, http.StatusOK, UsageReportState{State: "processing"})
 			return nil
 		}
 	}
@@ -232,11 +232,11 @@ func (i Impl) PatchSubscriptionsSubscriptionIdUsageReportsUsageReportId(ctx echo
 		monitoringContext.Error("Could not create report instance",
 			zap.String("subscriptionId", subscriptionId), zap.Int("month", usageReport.Month),
 			zap.Int("year", usageReport.Year), zap.Error(err))
-		noContentOrLog(monitoringContext, ctx, 500)
+		noContentOrLog(monitoringContext, ctx, http.StatusInternalServerError)
 		return nil
 	}
 
-	jsonContentOrLog(monitoringContext, ctx, 200, UsageReportState{State: "processing"})
+	jsonContentOrLog(monitoringContext, ctx, http.StatusOK, UsageReportState{State: "processing"})
 	return nil
 }
 
