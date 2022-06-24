@@ -18,9 +18,3 @@ run-k3d:
 
 kill-k3d:
 	k3d cluster delete factory
-
-run-docker:
-	./scripts/run-docker.sh
-
-run-docker-debug:
-	./scripts/run-docker.sh debug

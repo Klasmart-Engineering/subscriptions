@@ -59,18 +59,9 @@ Go back to https://github.com/settings/tokens, click on the "Configure SSO" drop
   make run-k3d
 ```
 
-##### To run locally in docker
+##### To remote debug locally 
 
-```
-  make run-docker
-```
-
-##### To remote debug locally in docker
-
-```
-  make run-docker-debug
-```
-- Then add the following configuration in Goland (TODO also add instructions for VScode)
+- Add the following configuration in Goland (TODO also add instructions for VScode)
 ![img.png](readme-images/img.png)
 
 Or to debug the instance in K3D, connect to port 40002 instead.
