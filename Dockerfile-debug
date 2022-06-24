@@ -9,7 +9,7 @@ WORKDIR /dockerdev
 
 # Compile the application with the optimizations turned off
 # This is important for the debugger to correctly work with the binary
-RUN go mod init
+RUN go mod init subscriptions
 RUN go build -gcflags "all=-N -l" -o /subscriptions ./src/main.go
 
 # Final stage
