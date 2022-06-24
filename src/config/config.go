@@ -66,10 +66,10 @@ type bucketConfig struct {
 }
 
 type athenaConfig struct {
-	InputBucketName  string //subscriptions-uk-apifactory-api-usage-firehose
-	OutputBucketName string //subscriptions-uk-apifactory-subscriptions-athena
-	DatabaseName     string //subscriptions_api_usage
-	WorkGroupName    string //subscriptions-uk-apifactory-subscriptions-athena
+	InputBucketName  string
+	OutputBucketName string
+	DatabaseName     string
+	WorkGroupName    string
 }
 
 func LoadProfile(name string) {

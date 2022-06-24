@@ -32,5 +32,11 @@
   },
   "BucketConfig": {
     "AccessLogBucket": "factory-access-log-bucket-int-test"
+  },
+  "AthenaConfig": {
+    "InputBucketName": "",
+    "OutputBucketName": "",
+    "DatabaseName": "",
+    "WorkGroupName": ""
   }
 }
