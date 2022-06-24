@@ -99,7 +99,7 @@ func CheckUsageReportInstances(monitoringContext *monitoring.Context, usageRepor
 				}
 
 				//TODO: Wrap inserting the rows and updating the completedat in a database transaction
-				for _, row := range results.ResultSet.Rows {
+				for _, row := range results.ResultSet.Rows[1:] {
 					err = db.InsertUsageReportInstanceProduct(monitoringContext, models.UsageReportInstanceProduct{
 						UsageReportInstanceId: instance.Id,
 						Product:               *row.Data[0].VarCharValue,
