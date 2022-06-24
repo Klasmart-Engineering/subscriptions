@@ -12,7 +12,7 @@ RUN go get -d -v ./...
 
 RUN go build -o ./subscriptions-app ./src/main.go
 
-RUN mkdir "/tmp/dayfiles"
+RUN mkdir -p "/tmp/dayfiles"
 
 EXPOSE 8080
 
