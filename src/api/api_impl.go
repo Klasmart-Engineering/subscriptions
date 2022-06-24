@@ -76,7 +76,7 @@ func (i Impl) GetSubscriptionsSubscriptionIdUsageReportsUsageReportId(ctx echo.C
 	var newestCompletedInstance *models.UsageReportInstance
 	var pendingInstance *models.UsageReportInstance
 	for _, instance := range usageReportInstances {
-		if (newestCompletedInstance == nil || newestCompletedInstance.RequestedAt.Before(instance.RequestedAt)) && instance.CompletedAt != nil {
+		if (newestCompletedInstance == nil || newestCompletedInstance.RequestedAt.Before(instance.RequestedAt)) && instance.CompletedAt != (*time.Time)(nil) {
 			newestCompletedInstance = &instance
 		}
 
