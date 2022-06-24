@@ -7,7 +7,6 @@
 ```
   brew install tilt
   brew install k3d
-  brew install kubectx 
   brew install istioctl
   brew install jq
   brew install helm

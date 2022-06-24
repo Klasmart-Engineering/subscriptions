@@ -8,5 +8,5 @@ if [[ $cluster != *"k3d"* ]]; then
   exit 1
 fi
 
-kubens subscriptions
+kubectl config set-context --current --namespace=subscriptions
 tilt up -f ./environment/local/Tiltfile
