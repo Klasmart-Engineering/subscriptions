@@ -61,9 +61,7 @@ Go back to https://github.com/settings/tokens, click on the "Configure SSO" drop
 ##### To remote debug locally 
 
 - Add the following configuration in Goland (TODO also add instructions for VScode)
-![img.png](readme-images/img.png)
-
-Or to debug the instance in K3D, connect to port 40002 instead.
+![img.png](readme-images/debug.png)
 
 ##### To run unit tests
 
