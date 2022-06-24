@@ -7,6 +7,7 @@ import (
 	uuid2 "github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
+	"net/http"
 	"strings"
 	"subscriptions/src/aws"
 	db "subscriptions/src/database"
@@ -34,17 +35,17 @@ func (i Impl) GetSubscriptionsSubscriptionIdUsageReportsUsageReportId(ctx echo.C
 	exists, subscription, err := db.GetSubscriptionById(monitoringContext, subscriptionId)
 	if err != nil {
 		monitoringContext.Error("Unable to check if Subscription exists", zap.Error(err))
-		noContentOrLog(monitoringContext, ctx, 500)
+		noContentOrLog(monitoringContext, ctx, http.StatusInternalServerError)
 		return nil
 	}
 
 	if !exists {
-		noContentOrLog(monitoringContext, ctx, 404)
+		noContentOrLog(monitoringContext, ctx, http.StatusNotFound)
 		return nil
 	}
 
 	if apiAuth.Jwt == nil || apiAuth.Jwt.AccountId != subscription.AccountId.String() {
-		noContentOrLog(monitoringContext, ctx, 403)
+		noContentOrLog(monitoringContext, ctx, http.StatusForbidden)
 		return nil
 	}
 
@@ -134,17 +135,17 @@ func (i Impl) GetSubscriptionsSubscriptionIdUsageReports(ctx echo.Context, monit
 	exists, subscription, err := db.GetSubscriptionById(monitoringContext, subscriptionId)
 	if err != nil {
 		monitoringContext.Error("Unable to check if Subscription exists", zap.Error(err))
-		noContentOrLog(monitoringContext, ctx, 500)
+		noContentOrLog(monitoringContext, ctx, http.StatusInternalServerError)
 		return nil
 	}
 
 	if !exists {
-		noContentOrLog(monitoringContext, ctx, 404)
+		noContentOrLog(monitoringContext, ctx, http.StatusNotFound)
 		return nil
 	}
 
 	if apiAuth.Jwt == nil || apiAuth.Jwt.AccountId != subscription.AccountId.String() {
-		noContentOrLog(monitoringContext, ctx, 403)
+		noContentOrLog(monitoringContext, ctx, http.StatusForbidden)
 		return nil
 	}
 
@@ -163,7 +164,7 @@ func (i Impl) GetSubscriptionsSubscriptionIdUsageReports(ctx echo.Context, monit
 		response[i] = UsageReports{Id: report.Id, From: from.Unix(), To: to.Unix()}
 	}
 
-	err = ctx.JSON(200, response)
+	err = ctx.JSON(http.StatusOK, response)
 	if err != nil {
 		return err
 	}
@@ -181,17 +182,17 @@ func (i Impl) PatchSubscriptionsSubscriptionIdUsageReportsUsageReportId(ctx echo
 	exists, subscription, err := db.GetSubscriptionById(monitoringContext, subscriptionId)
 	if err != nil {
 		monitoringContext.Error("Unable to check if Subscription exists", zap.Error(err))
-		noContentOrLog(monitoringContext, ctx, 500)
+		noContentOrLog(monitoringContext, ctx, http.StatusInternalServerError)
 		return nil
 	}
 
 	if !exists {
-		noContentOrLog(monitoringContext, ctx, 404)
+		noContentOrLog(monitoringContext, ctx, http.StatusNotFound)
 		return nil
 	}
 
 	if apiAuth.Jwt == nil || apiAuth.Jwt.AccountId != subscription.AccountId.String() {
-		noContentOrLog(monitoringContext, ctx, 403)
+		noContentOrLog(monitoringContext, ctx, http.StatusForbidden)
 		return nil
 	}
 
@@ -242,14 +243,14 @@ func (i Impl) PatchSubscriptionsSubscriptionIdUsageReportsUsageReportId(ctx echo
 func (Impl) GetHealthcheck(ctx echo.Context, monitoringContext *monitoring.Context) error {
 	healthcheck, err := db.Healthcheck()
 	if err != nil || !healthcheck {
-		err = ctx.JSON(500, ApplicationStateResponse{
+		err = ctx.JSON(http.StatusInternalServerError, ApplicationStateResponse{
 			Up:      false,
 			Details: "Could not query the database",
 		})
 		return err
 	}
 
-	err = ctx.JSON(200, ApplicationStateResponse{
+	err = ctx.JSON(http.StatusOK, ApplicationStateResponse{
 		Up:      true,
 		Details: "Successfully connected to the database",
 	})
@@ -261,7 +262,7 @@ func (Impl) GetHealthcheck(ctx echo.Context, monitoringContext *monitoring.Conte
 }
 
 func (Impl) GetLiveness(ctx echo.Context, monitoringContext *monitoring.Context) error {
-	err := ctx.JSON(200, ApplicationStateResponse{
+	err := ctx.JSON(http.StatusOK, ApplicationStateResponse{
 		Up:      true,
 		Details: "Application Up",
 	})
@@ -287,7 +288,7 @@ func (Impl) GetSubscriptionActions(ctx echo.Context, monitoringContext *monitori
 		}
 	}
 
-	err = ctx.JSON(200, response)
+	err = ctx.JSON(http.StatusOK, response)
 
 	return nil
 }
@@ -306,7 +307,7 @@ func (Impl) GetSubscriptionTypes(ctx echo.Context, monitoringContext *monitoring
 		}
 	}
 
-	err = ctx.JSON(200, response)
+	err = ctx.JSON(http.StatusOK, response)
 
 	return nil
 }
@@ -315,12 +316,12 @@ func (Impl) PostSubscriptions(ctx echo.Context, monitoringContext *monitoring.Co
 	exists, _, err := db.GetSubscriptionByAccountId(monitoringContext, request.AccountId.String())
 	if err != nil {
 		monitoringContext.Error("Unable to check if Subscription already exists", zap.Error(err))
-		noContentOrLog(monitoringContext, ctx, 500)
+		noContentOrLog(monitoringContext, ctx, http.StatusInternalServerError)
 		return nil
 	}
 
 	if exists {
-		noContentOrLog(monitoringContext, ctx, 409)
+		noContentOrLog(monitoringContext, ctx, http.StatusConflict)
 		return nil
 	}
 
@@ -334,12 +335,12 @@ func (Impl) PostSubscriptions(ctx echo.Context, monitoringContext *monitoring.Co
 	err = db.CreateSubscription(monitoringContext, subscription)
 	if err != nil {
 		monitoringContext.Error("Unable to create Subscription", zap.Error(err))
-		noContentOrLog(monitoringContext, ctx, 500)
+		noContentOrLog(monitoringContext, ctx, http.StatusInternalServerError)
 		return nil
 	}
 
 	ctx.Response().Header().Set("Location", "/subscriptions/"+subscription.Id.String())
-	ctx.Response().WriteHeader(201)
+	ctx.Response().WriteHeader(http.StatusCreated)
 
 	return nil
 }
@@ -348,17 +349,17 @@ func (i Impl) GetSubscriptionsSubscriptionId(ctx echo.Context, monitoringContext
 	exists, subscription, err := db.GetSubscriptionById(monitoringContext, subscriptionId)
 	if err != nil {
 		monitoringContext.Error("Unable to check if Subscription exists", zap.Error(err))
-		noContentOrLog(monitoringContext, ctx, 500)
+		noContentOrLog(monitoringContext, ctx, http.StatusInternalServerError)
 		return nil
 	}
 
 	if !exists {
-		noContentOrLog(monitoringContext, ctx, 404)
+		noContentOrLog(monitoringContext, ctx, http.StatusNotFound)
 		return nil
 	}
 
 	if apiAuth.ApiKey != nil || (apiAuth.Jwt != nil && apiAuth.Jwt.SubscriptionId == subscription.Id.String()) {
-		jsonContentOrLog(monitoringContext, ctx, 200, Subscription{
+		jsonContentOrLog(monitoringContext, ctx, http.StatusOK, Subscription{
 			AccountId: subscription.AccountId,
 			Id:        subscription.Id,
 			State:     subscription.State.String(),
@@ -366,7 +367,7 @@ func (i Impl) GetSubscriptionsSubscriptionId(ctx echo.Context, monitoringContext
 		return nil
 	}
 
-	noContentOrLog(monitoringContext, ctx, 403)
+	noContentOrLog(monitoringContext, ctx, http.StatusForbidden)
 	return nil
 }
 
@@ -374,12 +375,12 @@ func (Impl) GetSubscriptions(ctx echo.Context, monitoringContext *monitoring.Con
 	exists, subscription, err := db.GetSubscriptionByAccountId(monitoringContext, params.AccountId)
 	if err != nil {
 		monitoringContext.Error("Unable to check if Subscription exists", zap.Error(err))
-		noContentOrLog(monitoringContext, ctx, 500)
+		noContentOrLog(monitoringContext, ctx, http.StatusInternalServerError)
 		return nil
 	}
 
 	if exists && apiAuth.ApiKey != nil || (apiAuth.Jwt != nil && apiAuth.Jwt.SubscriptionId == subscription.Id.String()) {
-		jsonContentOrLog(monitoringContext, ctx, 200, []Subscription{
+		jsonContentOrLog(monitoringContext, ctx, http.StatusOK, []Subscription{
 			{
 				AccountId: subscription.AccountId,
 				Id:        subscription.Id,
@@ -389,7 +390,7 @@ func (Impl) GetSubscriptions(ctx echo.Context, monitoringContext *monitoring.Con
 		return nil
 	}
 
-	jsonContentOrLog(monitoringContext, ctx, 200, []Subscription{})
+	jsonContentOrLog(monitoringContext, ctx, http.StatusOK, []Subscription{})
 	return nil
 }
 
@@ -397,12 +398,12 @@ func (i Impl) PatchSubscriptionsSubscriptionId(ctx echo.Context, monitoringConte
 	exists, subscription, err := db.GetSubscriptionById(monitoringContext, subscriptionId)
 	if err != nil {
 		monitoringContext.Error("Unable to check if Subscription exists", zap.Error(err))
-		noContentOrLog(monitoringContext, ctx, 500)
+		noContentOrLog(monitoringContext, ctx, http.StatusInternalServerError)
 		return nil
 	}
 
 	if !exists {
-		noContentOrLog(monitoringContext, ctx, 404)
+		noContentOrLog(monitoringContext, ctx, http.StatusNotFound)
 		return nil
 	}
 
@@ -410,7 +411,7 @@ func (i Impl) PatchSubscriptionsSubscriptionId(ctx echo.Context, monitoringConte
 
 	if err != nil {
 		monitoringContext.Error("Unable to get subscription state", zap.Error(err))
-		noContentOrLog(monitoringContext, ctx, 400)
+		noContentOrLog(monitoringContext, ctx, http.StatusBadRequest)
 		return nil
 	}
 
@@ -419,21 +420,21 @@ func (i Impl) PatchSubscriptionsSubscriptionId(ctx echo.Context, monitoringConte
 
 		if err != nil {
 			monitoringContext.Error("Unable to get update subscription state", zap.Error(err))
-			noContentOrLog(monitoringContext, ctx, 500)
+			noContentOrLog(monitoringContext, ctx, http.StatusInternalServerError)
 			return nil
 		}
 
-		noContentOrLog(monitoringContext, ctx, 200)
+		noContentOrLog(monitoringContext, ctx, http.StatusOK)
 	}
 
-	noContentOrLog(monitoringContext, ctx, 403)
+	noContentOrLog(monitoringContext, ctx, http.StatusForbidden)
 	return nil
 }
 
 func (i Impl) GetTestAthena(ctx echo.Context, monitoringContext *monitoring.Context, params GetTestAthenaParams) error {
 	if _, err := uuid2.Parse(*params.SubscriptionId); err != nil {
 		monitoringContext.Error("Could not parse subscription id query param", zap.Error(err))
-		ctx.NoContent(400)
+		ctx.NoContent(http.StatusBadRequest)
 		return nil
 	}
 
@@ -464,7 +465,7 @@ func (i Impl) GetTestAthena(ctx echo.Context, monitoringContext *monitoring.Cont
 	})
 	if err != nil {
 		monitoringContext.Error("Something went wrong creating table", zap.Error(err))
-		ctx.NoContent(500)
+		ctx.NoContent(http.StatusInternalServerError)
 		return nil
 	}
 
@@ -476,7 +477,7 @@ func (i Impl) GetTestAthena(ctx echo.Context, monitoringContext *monitoring.Cont
 
 	if err != nil {
 		monitoringContext.Error("Something went wrong getting create table results", zap.Error(err))
-		ctx.NoContent(500)
+		ctx.NoContent(http.StatusInternalServerError)
 		return nil
 	}
 
@@ -496,7 +497,7 @@ func (i Impl) GetTestAthena(ctx echo.Context, monitoringContext *monitoring.Cont
 	})
 	if err != nil {
 		monitoringContext.Error("Something went wrong creating table", zap.Error(err))
-		ctx.NoContent(500)
+		ctx.NoContent(http.StatusInternalServerError)
 		return nil
 	}
 
@@ -508,12 +509,12 @@ func (i Impl) GetTestAthena(ctx echo.Context, monitoringContext *monitoring.Cont
 
 	if err != nil {
 		monitoringContext.Error("Something went wrong getting query results", zap.Error(err))
-		ctx.NoContent(500)
+		ctx.NoContent(http.StatusInternalServerError)
 		return nil
 	}
 
 	monitoringContext.Info(fmt.Sprintf("query results %+v", queryResults))
 
-	ctx.NoContent(200)
+	ctx.NoContent(http.StatusOK)
 	return nil
 }
