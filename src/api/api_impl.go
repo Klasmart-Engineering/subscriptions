@@ -109,6 +109,8 @@ func (i Impl) GetSubscriptionsSubscriptionIdUsageReportsUsageReportId(ctx echo.C
 			products.Set(product.Product, product.Value)
 		}
 
+		monitoringContext.Info(fmt.Sprintf("newestCompletedInstance is: %+v", newestCompletedInstance))
+
 		jsonContentOrLog(monitoringContext, ctx, http.StatusOK, UsageReport{
 			Id:                usageReportUUID,
 			From:              from.Unix(),
