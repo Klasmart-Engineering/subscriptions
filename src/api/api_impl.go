@@ -172,6 +172,12 @@ func (i Impl) GetSubscriptionsSubscriptionIdUsageReports(ctx echo.Context, monit
 }
 
 func (i Impl) PatchSubscriptionsSubscriptionIdUsageReportsUsageReportId(ctx echo.Context, monitoringContext *monitoring.Context, apiAuth ApiAuth, subscriptionId string, usageReportId string) error {
+	usageReportUUID, err := uuid2.Parse(usageReportId)
+	if err != nil {
+		noContentOrLog(monitoringContext, ctx, 400)
+		return nil
+	}
+
 	exists, subscription, err := db.GetSubscriptionById(monitoringContext, subscriptionId)
 	if err != nil {
 		monitoringContext.Error("Unable to check if Subscription exists", zap.Error(err))
@@ -189,14 +195,40 @@ func (i Impl) PatchSubscriptionsSubscriptionIdUsageReportsUsageReportId(ctx echo
 		return nil
 	}
 
-	//TEMP until S3 & Athena implementation
-	state := UsageReportState{State: "processing"}
-
-	err = ctx.JSON(200, state)
+	usageReportExists, usageReport, err := db.GetUsageReport(monitoringContext, usageReportUUID)
 	if err != nil {
-		return err
+		monitoringContext.Error("Unable to check if Usage Report exists", zap.Error(err))
+		noContentOrLog(monitoringContext, ctx, 500)
+		return nil
 	}
 
+	if !usageReportExists {
+		noContentOrLog(monitoringContext, ctx, 404)
+		return nil
+	}
+
+	if usageReport.SubscriptionId != subscription.Id {
+		noContentOrLog(monitoringContext, ctx, 403)
+		return nil
+	}
+
+	usageReportInstances, err := services.CheckUsageReportInstances(monitoringContext, usageReportUUID)
+	if err != nil {
+		monitoringContext.Error("Unable to get Usage Report instances", zap.Error(err), zap.String("usageReportId", usageReportId))
+		noContentOrLog(monitoringContext, ctx, 500)
+		return nil
+	}
+
+	for _, instance := range usageReportInstances {
+		if instance.CompletedAt == nil {
+			jsonContentOrLog(monitoringContext, ctx, 200, UsageReportState{State: "processing"})
+			return nil
+		}
+	}
+
+	err = services.CreateReportInstance(monitoringContext, usageReport)
+
+	jsonContentOrLog(monitoringContext, ctx, 200, UsageReportState{State: "processing"})
 	return nil
 }
 

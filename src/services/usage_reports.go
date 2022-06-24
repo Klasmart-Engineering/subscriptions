@@ -16,6 +16,13 @@ type missingMonth struct {
 	month int
 }
 
+func CreateReportInstance(monitoringContext *monitoring.Context, usageReport models.UsageReport) error {
+	//TODO: Create table if needed
+	//		Create query
+	//		Write into usage report instance table
+	//		Bucket names and all that jazz need parameterising from config rather than hardcoding!
+}
+
 func GenerateMissingUsageReports(monitoringContext *monitoring.Context, subscription models.Subscription) ([]models.UsageReport, error) {
 	currentUsageReports, err := db.GetUsageReportsForSubscription(monitoringContext, subscription.Id)
 	if err != nil {
