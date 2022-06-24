@@ -251,37 +251,36 @@ components:
           type: string
           format: uuid
         from:
-          type: string
+          type: integer
+          format: int64
         to:
-          type: string
+          type: integer
+          format: int64
     UsageReport:
       required:
         - id
         - from
         - to
-        - report_completed_at
         - state
-        - products
       properties:
         id:
           type: string
           format: uuid
         from:
-          type: string
+          type: integer
+          format: int64
         to:
-          type: string
+          type: integer
+          format: int64
         report_completed_at:
-          type: string
+          type: integer
+          format: int64
         state:
           type: string
         products:
-          $ref: "#/components/schemas/Product"
-    Product:
-      required:
-        - product_name
-      properties:
-        product_name:
-          type: string
+          type: object
+          additionalProperties:
+            type: integer
   responses:
     ApplicationStateResponse:
       description: Successful healthcheck or liveness response

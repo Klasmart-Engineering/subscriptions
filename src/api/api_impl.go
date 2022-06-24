@@ -13,6 +13,7 @@ import (
 	db "subscriptions/src/database"
 	"subscriptions/src/models"
 	"subscriptions/src/monitoring"
+	"subscriptions/src/services"
 	"subscriptions/src/utils"
 	"time"
 )
@@ -25,6 +26,12 @@ var Implementation = &Impl{}
 var _ ServerInterface = (*Impl)(nil)
 
 func (i Impl) GetSubscriptionsSubscriptionIdUsageReportsUsageReportId(ctx echo.Context, monitoringContext *monitoring.Context, apiAuth ApiAuth, subscriptionId string, usageReportId string) error {
+	usageReportUUID, err := uuid2.Parse(usageReportId)
+	if err != nil {
+		noContentOrLog(monitoringContext, ctx, http.StatusBadRequest)
+		return nil
+	}
+
 	exists, subscription, err := db.GetSubscriptionById(monitoringContext, subscriptionId)
 	if err != nil {
 		monitoringContext.Error("Unable to check if Subscription exists", zap.Error(err))
@@ -42,14 +49,85 @@ func (i Impl) GetSubscriptionsSubscriptionIdUsageReportsUsageReportId(ctx echo.C
 		return nil
 	}
 
-	//TEMP until S3 & Athena implementation
-	report := UsageReport{Id: uuid2.New(), From: "1640995200", To: "1640995200", ReportCompletedAt: "1640991100", State: "ready", Products: Product{ProductName: "Content API"}}
-
-	err = ctx.JSON(http.StatusOK, report)
+	usageReportExists, usageReport, err := db.GetUsageReport(monitoringContext, usageReportUUID)
 	if err != nil {
-		return err
+		monitoringContext.Error("Unable to check if Usage Report exists", zap.Error(err))
+		noContentOrLog(monitoringContext, ctx, http.StatusInternalServerError)
+		return nil
 	}
 
+	if !usageReportExists {
+		noContentOrLog(monitoringContext, ctx, http.StatusNotFound)
+		return nil
+	}
+
+	if usageReport.SubscriptionId != subscription.Id {
+		noContentOrLog(monitoringContext, ctx, http.StatusForbidden)
+		return nil
+	}
+
+	usageReportInstances, err := services.CheckUsageReportInstances(monitoringContext, usageReportUUID)
+	if err != nil {
+		monitoringContext.Error("Unable to get Usage Report instances", zap.Error(err), zap.String("usageReportId", usageReportId))
+		noContentOrLog(monitoringContext, ctx, http.StatusInternalServerError)
+		return nil
+	}
+
+	var newestCompletedInstance *models.UsageReportInstance
+	var pendingInstance *models.UsageReportInstance
+	for _, instance := range usageReportInstances {
+		if (newestCompletedInstance == nil || newestCompletedInstance.RequestedAt.Before(instance.RequestedAt)) && instance.CompletedAt != nil {
+			newestCompletedInstance = &instance
+		}
+
+		if instance.CompletedAt == nil {
+			pendingInstance = &instance
+		}
+	}
+
+	from := utils.GetMonth(usageReport.Year, usageReport.Month)
+	to := utils.ToNextMonth(from)
+
+	state := "not_requested"
+	if pendingInstance != nil {
+		state = "processing"
+	} else if newestCompletedInstance != nil {
+		state = "ready"
+	}
+
+	if newestCompletedInstance != nil {
+		instanceProducts, err := db.GetUsageReportInstanceProducts(monitoringContext, newestCompletedInstance.Id)
+		if err != nil {
+			monitoringContext.Error("Unable to get Usage Report Instance Products", zap.Error(err), zap.String("usageReportInstanceId", newestCompletedInstance.Id.String()))
+			noContentOrLog(monitoringContext, ctx, http.StatusInternalServerError)
+			return nil
+		}
+
+		products := UsageReport_Products{}
+
+		for _, product := range instanceProducts {
+			products.Set(product.Product, product.Value)
+		}
+
+		jsonContentOrLog(monitoringContext, ctx, http.StatusOK, UsageReport{
+			Id:                usageReportUUID,
+			From:              from.Unix(),
+			To:                to.Unix(),
+			ReportCompletedAt: utils.Int64Ptr(newestCompletedInstance.CompletedAt.Unix()),
+			State:             state,
+			Products:          &products,
+		})
+		return nil
+	}
+
+	jsonContentOrLog(monitoringContext, ctx, http.StatusOK, UsageReport{
+		Id:                usageReportUUID,
+		From:              from.Unix(),
+		To:                to.Unix(),
+		ReportCompletedAt: nil,
+		State:             state,
+		Products:          nil,
+	})
 	return nil
 }
 
@@ -71,10 +149,19 @@ func (i Impl) GetSubscriptionsSubscriptionIdUsageReports(ctx echo.Context, monit
 		return nil
 	}
 
-	//TEMP until S3 & Athena implementation
-	response := make([]UsageReports, 3)
-	for i := 0; i < 3; i++ {
-		response[i] = UsageReports{Id: uuid2.New(), From: "1640995200", To: "1643673599"}
+	usageReports, err := services.GenerateMissingUsageReports(monitoringContext, subscription)
+	if err != nil {
+		monitoringContext.Error("Unable to get usage reports for Subscription",
+			zap.Error(err), zap.String("subscriptionId", subscriptionId))
+		noContentOrLog(monitoringContext, ctx, http.StatusInternalServerError)
+		return nil
+	}
+
+	response := make([]UsageReports, len(usageReports))
+	for i, report := range usageReports {
+		from := utils.GetMonth(report.Year, report.Month)
+		to := utils.ToNextMonth(from)
+		response[i] = UsageReports{Id: report.Id, From: from.Unix(), To: to.Unix()}
 	}
 
 	err = ctx.JSON(http.StatusOK, response)
@@ -86,6 +173,12 @@ func (i Impl) GetSubscriptionsSubscriptionIdUsageReports(ctx echo.Context, monit
 }
 
 func (i Impl) PatchSubscriptionsSubscriptionIdUsageReportsUsageReportId(ctx echo.Context, monitoringContext *monitoring.Context, apiAuth ApiAuth, subscriptionId string, usageReportId string) error {
+	usageReportUUID, err := uuid2.Parse(usageReportId)
+	if err != nil {
+		noContentOrLog(monitoringContext, ctx, http.StatusBadRequest)
+		return nil
+	}
+
 	exists, subscription, err := db.GetSubscriptionById(monitoringContext, subscriptionId)
 	if err != nil {
 		monitoringContext.Error("Unable to check if Subscription exists", zap.Error(err))
@@ -103,14 +196,47 @@ func (i Impl) PatchSubscriptionsSubscriptionIdUsageReportsUsageReportId(ctx echo
 		return nil
 	}
 
-	//TEMP until S3 & Athena implementation
-	state := UsageReportState{State: "processing"}
-
-	err = ctx.JSON(http.StatusOK, state)
+	usageReportExists, usageReport, err := db.GetUsageReport(monitoringContext, usageReportUUID)
 	if err != nil {
-		return err
+		monitoringContext.Error("Unable to check if Usage Report exists", zap.Error(err))
+		noContentOrLog(monitoringContext, ctx, http.StatusInternalServerError)
+		return nil
 	}
 
+	if !usageReportExists {
+		noContentOrLog(monitoringContext, ctx, http.StatusNotFound)
+		return nil
+	}
+
+	if usageReport.SubscriptionId != subscription.Id {
+		noContentOrLog(monitoringContext, ctx, http.StatusForbidden)
+		return nil
+	}
+
+	usageReportInstances, err := services.CheckUsageReportInstances(monitoringContext, usageReportUUID)
+	if err != nil {
+		monitoringContext.Error("Unable to get Usage Report instances", zap.Error(err), zap.String("usageReportId", usageReportId))
+		noContentOrLog(monitoringContext, ctx, http.StatusInternalServerError)
+		return nil
+	}
+
+	for _, instance := range usageReportInstances {
+		if instance.CompletedAt == nil {
+			jsonContentOrLog(monitoringContext, ctx, http.StatusOK, UsageReportState{State: "processing"})
+			return nil
+		}
+	}
+
+	err = services.CreateReportInstance(monitoringContext, usageReport)
+	if err != nil {
+		monitoringContext.Error("Could not create report instance",
+			zap.String("subscriptionId", subscriptionId), zap.Int("month", usageReport.Month),
+			zap.Int("year", usageReport.Year), zap.Error(err))
+		noContentOrLog(monitoringContext, ctx, http.StatusInternalServerError)
+		return nil
+	}
+
+	jsonContentOrLog(monitoringContext, ctx, http.StatusOK, UsageReportState{State: "processing"})
 	return nil
 }
 

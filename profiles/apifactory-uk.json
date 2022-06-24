@@ -29,5 +29,11 @@
   },
   "BucketConfig": {
     "AccessLogBucket": "access-logs-factory"
+  },
+  "AthenaConfig": {
+    "InputBucketName": "subscriptions-uk-apifactory-api-usage-firehose",
+    "OutputBucketName": "subscriptions-uk-apifactory-subscriptions-athena",
+    "DatabaseName": "subscriptions_api_usage",
+    "WorkGroupName": "subscriptions-uk-apifactory-subscriptions-athena"
   }
 }
