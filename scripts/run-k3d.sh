@@ -9,4 +9,4 @@ if [[ $cluster != *"k3d"* ]]; then
 fi
 
 kubens subscriptions
-tilt up
+tilt up -f ./environment/local/Tiltfile
