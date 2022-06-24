@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"strings"
 	"subscriptions/src/aws"
@@ -36,9 +37,9 @@ func ForceCronJob(c echo.Context) error {
 	switch c.QueryParam("cronName") {
 	case "access-log-compaction":
 		CompactionCron()
-		c.NoContent(200)
+		c.NoContent(http.StatusOK)
 	default:
-		c.NoContent(404)
+		c.NoContent(http.StatusNotFound)
 	}
 
 	return nil
