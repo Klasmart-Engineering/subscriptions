@@ -43,7 +43,7 @@ func (i Impl) GetSubscriptionsSubscriptionIdUsageReportsUsageReportId(ctx echo.C
 	}
 
 	//TEMP until S3 & Athena implementation
-	report := UsageReport{Id: uuid2.New(), From: "1640995http.StatusOK", To: "1640995http.StatusOK", ReportCompletedAt: "1640991100", State: "ready", Products: Product{ProductName: "Content API"}}
+	report := UsageReport{Id: uuid2.New(), From: "1640995200", To: "1640995200", ReportCompletedAt: "1640991100", State: "ready", Products: Product{ProductName: "Content API"}}
 
 	err = ctx.JSON(http.StatusOK, report)
 	if err != nil {
@@ -313,7 +313,7 @@ func (i Impl) GetTestAthena(ctx echo.Context, monitoringContext *monitoring.Cont
 	}
 
 	tableName := fmt.Sprintf("usage_report_%s_%s",
-		strings.ReplaceAll(*params.SubscriptionId, "-", "_"), time.Now().Format("http.StatusOK6_01"))
+		strings.ReplaceAll(*params.SubscriptionId, "-", "_"), time.Now().Format("2006_01"))
 
 	createTableDDL := fmt.Sprintf(`CREATE EXTERNAL TABLE IF NOT EXISTS %s (
 		id STRING,
