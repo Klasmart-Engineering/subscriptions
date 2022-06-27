@@ -1,4 +1,4 @@
-docker_build('local-go-image', '.',
+docker_build('local-go-image', '../../.',
     dockerfile='../../Dockerfile-debug',
     )
 
