@@ -59,6 +59,7 @@ type awsConfig struct {
 	AccessKeyId     *string
 	AccessKeySecret *string
 	Endpoint        *string
+	AthenaEndpoint  *string
 }
 
 type bucketConfig struct {
