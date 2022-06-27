@@ -214,6 +214,7 @@ func createInstanceQuery(monitoringContext *monitoring.Context, report models.Us
 }
 
 func pollForQueryCompletion(monitoringContext *monitoring.Context, id string) error {
+	monitoringContext.Info("Polling for query completion: " + id)
 	failedOrCancelled := false
 	check := func() error {
 		getQueryExecutionOutput, err := aws.AthenaClient.GetQueryExecution(monitoringContext, &athena.GetQueryExecutionInput{
@@ -241,8 +242,8 @@ func pollForQueryCompletion(monitoringContext *monitoring.Context, id string) er
 		InitialInterval:     100 * time.Millisecond,
 		RandomizationFactor: 0.5,
 		Multiplier:          1.2,
-		MaxInterval:         5 * time.Second,
-		MaxElapsedTime:      60 * time.Second,
+		MaxInterval:         1 * time.Second,
+		MaxElapsedTime:      5 * time.Second,
 		Stop:                -1,
 		Clock:               backoff.SystemClock,
 	})

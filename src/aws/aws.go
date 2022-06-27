@@ -30,6 +30,7 @@ func setupWithManuallyProvidedConfig() {
 	)
 
 	var cfg aws.Config
+	var athenaCfg aws.Config
 	if config.GetConfig().AwsConfig.Endpoint != nil {
 		cfg = aws.Config{
 			Credentials: creds,
@@ -50,6 +51,30 @@ func setupWithManuallyProvidedConfig() {
 				}, nil
 			}),
 		}
+
+		if config.GetConfig().AwsConfig.AthenaEndpoint == nil {
+			athenaCfg = cfg
+		} else {
+			athenaCfg = aws.Config{
+				Credentials: creds,
+				Region:      config.GetConfig().AwsConfig.Region,
+				EndpointResolverWithOptions: aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
+					return aws.Endpoint{
+						PartitionID:   "aws",
+						URL:           *config.GetConfig().AwsConfig.AthenaEndpoint,
+						SigningRegion: region,
+					}, nil
+				}),
+				EndpointResolver: aws.EndpointResolverFunc(func(service, region string) (aws.Endpoint, error) {
+					//Despite being deprecated, it seems this is actually used rather than the above sometimes - so don't delete
+					return aws.Endpoint{
+						PartitionID:   "aws",
+						URL:           *config.GetConfig().AwsConfig.AthenaEndpoint,
+						SigningRegion: region,
+					}, nil
+				}),
+			}
+		}
 	} else {
 		cfg = aws.Config{
 			Credentials: creds,
@@ -60,7 +85,7 @@ func setupWithManuallyProvidedConfig() {
 	S3Client = s3.NewFromConfig(cfg, func(options *s3.Options) {
 		options.UsePathStyle = true
 	})
-	AthenaClient = athena.NewFromConfig(cfg)
+	AthenaClient = athena.NewFromConfig(athenaCfg)
 }
 
 func setupWithDefaults() {

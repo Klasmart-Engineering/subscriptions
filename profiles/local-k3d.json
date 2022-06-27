@@ -28,7 +28,8 @@
     "Region": "eu-west-1",
     "AccessKeyId": "test",
     "AccessKeySecret": "test",
-    "Endpoint": "http://localstack:4566"
+    "Endpoint": "http://localstack:4566",
+    "AthenaEndpoint": "http://athena-mock:4567"
   },
   "BucketConfig": {
     "AccessLogBucket": "factory-access-log-bucket"
