@@ -1,15 +1,10 @@
 package api
 
 import (
-	"fmt"
-	"github.com/aws/aws-sdk-go-v2/service/athena"
-	"github.com/aws/aws-sdk-go-v2/service/athena/types"
 	uuid2 "github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 	"net/http"
-	"strings"
-	"subscriptions/src/aws"
 	db "subscriptions/src/database"
 	"subscriptions/src/models"
 	"subscriptions/src/monitoring"
@@ -76,12 +71,13 @@ func (i Impl) GetSubscriptionsSubscriptionIdUsageReportsUsageReportId(ctx echo.C
 	var newestCompletedInstance *models.UsageReportInstance
 	var pendingInstance *models.UsageReportInstance
 	for _, instance := range usageReportInstances {
+		instancee := instance
 		if (newestCompletedInstance == nil || newestCompletedInstance.RequestedAt.Before(instance.RequestedAt)) && !utils.IsNil(instance.CompletedAt) {
-			newestCompletedInstance = &instance
+			newestCompletedInstance = &instancee
 		}
 
 		if instance.CompletedAt == nil {
-			pendingInstance = &instance
+			pendingInstance = &instancee
 		}
 	}
 
@@ -108,8 +104,6 @@ func (i Impl) GetSubscriptionsSubscriptionIdUsageReportsUsageReportId(ctx echo.C
 		for _, product := range instanceProducts {
 			products.Set(product.Product, product.Value)
 		}
-
-		monitoringContext.Info(fmt.Sprintf("newestCompletedInstance is: %+v", newestCompletedInstance))
 
 		jsonContentOrLog(monitoringContext, ctx, http.StatusOK, UsageReport{
 			Id:                usageReportUUID,
@@ -430,93 +424,5 @@ func (i Impl) PatchSubscriptionsSubscriptionId(ctx echo.Context, monitoringConte
 	}
 
 	noContentOrLog(monitoringContext, ctx, http.StatusForbidden)
-	return nil
-}
-
-func (i Impl) GetTestAthena(ctx echo.Context, monitoringContext *monitoring.Context, params GetTestAthenaParams) error {
-	if _, err := uuid2.Parse(*params.SubscriptionId); err != nil {
-		monitoringContext.Error("Could not parse subscription id query param", zap.Error(err))
-		ctx.NoContent(http.StatusBadRequest)
-		return nil
-	}
-
-	tableName := fmt.Sprintf("usage_report_%s_%s",
-		strings.ReplaceAll(*params.SubscriptionId, "-", "_"), time.Now().Format("2006_01"))
-
-	createTableDDL := fmt.Sprintf(`CREATE EXTERNAL TABLE IF NOT EXISTS %s (
-		id STRING,
-		occurred_at BIGINT,
-		product STRING,
-		method STRING,
-		path STRING,
-		android_id STRING,
-		subscription_id STRING
-	) ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe' 
-	LOCATION 's3://subscriptions-uk-apifactory-api-usage-firehose/%s/%s/'`,
-		tableName, *params.SubscriptionId, time.Now().Format("2006/01"))
-
-	ddlResponse, err := aws.AthenaClient.StartQueryExecution(monitoringContext, &athena.StartQueryExecutionInput{
-		QueryString: &createTableDDL,
-		QueryExecutionContext: &types.QueryExecutionContext{
-			Database: utils.StringPtr("subscriptions_api_usage"),
-		},
-		WorkGroup: utils.StringPtr("subscriptions-uk-apifactory-subscriptions-athena"),
-		ResultConfiguration: &types.ResultConfiguration{
-			OutputLocation: utils.StringPtr("s3://subscriptions-uk-apifactory-subscriptions-athena/"),
-		},
-	})
-	if err != nil {
-		monitoringContext.Error("Something went wrong creating table", zap.Error(err))
-		ctx.NoContent(http.StatusInternalServerError)
-		return nil
-	}
-
-	monitoringContext.Info("Finished create table DDL: " + *ddlResponse.QueryExecutionId)
-
-	ddlResults, err := aws.AthenaClient.GetQueryResults(monitoringContext, &athena.GetQueryResultsInput{
-		QueryExecutionId: ddlResponse.QueryExecutionId,
-	})
-
-	if err != nil {
-		monitoringContext.Error("Something went wrong getting create table results", zap.Error(err))
-		ctx.NoContent(http.StatusInternalServerError)
-		return nil
-	}
-
-	monitoringContext.Info(fmt.Sprintf("ddl results %+v", ddlResults))
-
-	monthlyUsageQuery := fmt.Sprintf("SELECT COUNT(1) FROM %s", tableName)
-
-	queryResponse, err := aws.AthenaClient.StartQueryExecution(monitoringContext, &athena.StartQueryExecutionInput{
-		QueryString: &monthlyUsageQuery,
-		QueryExecutionContext: &types.QueryExecutionContext{
-			Database: utils.StringPtr("subscriptions_api_usage"),
-		},
-		WorkGroup: utils.StringPtr("subscriptions-uk-apifactory-subscriptions-athena"),
-		ResultConfiguration: &types.ResultConfiguration{
-			OutputLocation: utils.StringPtr("s3://subscriptions-uk-apifactory-subscriptions-athena/"),
-		},
-	})
-	if err != nil {
-		monitoringContext.Error("Something went wrong creating table", zap.Error(err))
-		ctx.NoContent(http.StatusInternalServerError)
-		return nil
-	}
-
-	monitoringContext.Info("Finished query: " + *queryResponse.QueryExecutionId)
-
-	queryResults, err := aws.AthenaClient.GetQueryResults(monitoringContext, &athena.GetQueryResultsInput{
-		QueryExecutionId: queryResponse.QueryExecutionId,
-	})
-
-	if err != nil {
-		monitoringContext.Error("Something went wrong getting query results", zap.Error(err))
-		ctx.NoContent(http.StatusInternalServerError)
-		return nil
-	}
-
-	monitoringContext.Info(fmt.Sprintf("query results %+v", queryResults))
-
-	ctx.NoContent(http.StatusOK)
 	return nil
 }
