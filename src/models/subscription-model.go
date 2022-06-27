@@ -23,11 +23,6 @@ type SubscriptionActionList struct {
 	Actions []SubscriptionAction `json:"actions"`
 }
 
-type Healthcheck struct {
-	Up      bool   `json:"up"`
-	Details string `json:"details"`
-}
-
 type Subscription struct {
 	Id        uuid2.UUID
 	AccountId uuid2.UUID

@@ -8,4 +8,4 @@ spec:
   lifecycle: production
   owner: "lewis.callan@kidsloop.live"
   definition:
-    $text: https://github.com/KL-Engineering/subscriptions/blob/main/docs.yaml
+    $text: https://github.com/KL-Engineering/subscriptions/blob/main/openapi/spec.yaml

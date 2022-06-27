@@ -9,4 +9,4 @@ if [[ $cluster != *"k3d"* ]]; then
 fi
 
 kubectl config set-context --current --namespace=subscriptions
-tilt up -f ./Tiltfile-integration
+tilt up -f ./environment/integration/Tiltfile
