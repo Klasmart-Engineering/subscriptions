@@ -81,7 +81,7 @@ func CheckUsageReportInstances(monitoringContext *monitoring.Context, usageRepor
 		return nil, err
 	}
 
-	for _, instance := range usageReportInstances {
+	for i, instance := range usageReportInstances {
 		if instance.CompletedAt == nil {
 			execution, err := aws.AthenaClient.GetQueryExecution(monitoringContext, &athena.GetQueryExecutionInput{
 				QueryExecutionId: &instance.AthenaQueryId,
@@ -112,8 +112,8 @@ func CheckUsageReportInstances(monitoringContext *monitoring.Context, usageRepor
 					}
 				}
 
-				instance.CompletedAt = utils.TimePtr(time.Now())
-				err = db.UpdateUsageReportInstance(monitoringContext, instance)
+				usageReportInstances[i].CompletedAt = utils.TimePtr(time.Now())
+				err = db.UpdateUsageReportInstance(monitoringContext, usageReportInstances[i])
 				if err != nil {
 					return nil, err
 				}

@@ -102,7 +102,7 @@ func getQueryExecution(request GetQueryExecutionInput) (interface{}, int) {
 	var completionDateTime *int64
 	if _, createTableRequestExists := createTableRequests[*request.QueryExecutionId]; createTableRequestExists {
 		state = types.QueryExecutionStateSucceeded
-		completionDateTime = IntPtr(time.Now().Add(time.Second * -5).Unix())
+		completionDateTime = IntPtr(time.Now().Add(0 - (time.Second * 5)).Unix())
 	} else if queryRequestedAt, queryRequestExists := queryRequests[*request.QueryExecutionId]; queryRequestExists {
 		if queryRequestedAt.Add(time.Second * 5).Before(time.Now()) {
 			state = types.QueryExecutionStateSucceeded
