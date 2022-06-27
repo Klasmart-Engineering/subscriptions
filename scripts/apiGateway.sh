@@ -1,5 +1,6 @@
 #!/bin/bash
 
+#  TODO update script once local gateway is fixed.
 set -e
 
 echo "Enter number of requests:"
@@ -13,7 +14,6 @@ for i in $(seq 1 "$requestCount")
 do
 
   epochTime=`date +%s`
-#  TODO update this to point at the gateway instead of the app once Redpanda is running in K8s.
    http_response=$(curl -s -o response.json -w "%{http_code}" -X POST 'http://localhost:8070/log-action' \
                                                               -H 'Content-Type: application/json' \
                                                               -d '{

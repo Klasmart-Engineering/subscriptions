@@ -9,6 +9,7 @@ WORKDIR /dockerdev
 
 # Compile the application with the optimizations turned off
 # This is important for the debugger to correctly work with the binary
+
 RUN go build -gcflags "all=-N -l" -o /subscriptions ./src/main.go
 
 # Final stage
@@ -23,6 +24,6 @@ COPY --from=build-env /dockerdev/profiles /app/profiles
 COPY --from=build-env /dockerdev/database/migrations /app/database/migrations
 COPY --from=build-env /dockerdev/database/seed.sql /app/database/seed.sql
 
-RUN mkdir "/tmp/dayfiles"
+RUN mkdir -p "/tmp/dayfiles"
 
 CMD ["/dlv", "--listen=:40000", "--headless=true", "--continue=true", "--api-version=2", "--accept-multiclient", "exec", "./subscriptions"]

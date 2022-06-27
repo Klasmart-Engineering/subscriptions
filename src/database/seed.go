@@ -1,7 +1,6 @@
 package db
 
 import (
-	"database/sql"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"go.uber.org/zap"
 	"os"
@@ -9,7 +8,7 @@ import (
 	"subscriptions/src/monitoring"
 )
 
-func seedDatabase(db *sql.DB) {
+func seedDatabase() {
 	if !config.GetConfig().Database.Seed {
 		return
 	}

@@ -17,5 +17,5 @@ go test -v ./test/integration/...
 
 echo "Finished integration tests"
 
-tilt down -f ./Tiltfile-integration
+tilt down -f ./environment/integration/Tiltfile
 

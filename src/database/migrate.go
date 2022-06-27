@@ -1,7 +1,6 @@
 package db
 
 import (
-	"database/sql"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -9,10 +8,10 @@ import (
 	"subscriptions/src/monitoring"
 )
 
-func migrateDatabase(db *sql.DB) {
+func migrateDatabase() {
 	monitoring.GlobalContext.Info("Starting database migration")
 
-	driver, err := postgres.WithInstance(db, &postgres.Config{})
+	driver, err := postgres.WithInstance(dbConnection.DB, &postgres.Config{})
 	if err != nil {
 		monitoring.GlobalContext.Fatal("Could not create migration driver", zap.Error(err))
 	}

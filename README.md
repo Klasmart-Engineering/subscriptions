@@ -7,7 +7,6 @@
 ```
   brew install tilt
   brew install k3d
-  brew install kubectx 
   brew install istioctl
   brew install jq
   brew install helm
@@ -59,21 +58,10 @@ Go back to https://github.com/settings/tokens, click on the "Configure SSO" drop
   make run-k3d
 ```
 
-##### To run locally in docker
+##### To remote debug locally 
 
-```
-  make run-docker
-```
-
-##### To remote debug locally in docker
-
-```
-  make run-docker-debug
-```
-- Then add the following configuration in Goland (TODO also add instructions for VScode)
-![img.png](readme-images/img.png)
-
-Or to debug the instance in K3D, connect to port 40002 instead.
+- Add the following configuration in Goland (TODO also add instructions for VScode)
+![img.png](readme-images/debug.png)
 
 ##### To run unit tests
 

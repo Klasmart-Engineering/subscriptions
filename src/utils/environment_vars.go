@@ -2,19 +2,11 @@ package utils
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"os"
 	"strconv"
 	"strings"
 )
-
-func MustGetEnv(key string) string {
-	if val := os.Getenv(key); "" != val {
-		return val
-	}
-	panic(fmt.Sprintf("environment variable %s unset", key))
-}
 
 func GetStringEnv(key string) *string {
 	value, exists := os.LookupEnv(key)
