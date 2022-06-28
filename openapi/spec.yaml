@@ -219,7 +219,6 @@ components:
     Subscription:
       required:
         - id
-        - subscription_id
         - account_id
         - state
         - created_on
@@ -232,9 +231,6 @@ components:
           format: uuid
         state:
           type: string
-        subscription_id:
-          type: string
-          format: uuid
         created_on:
           type: integer
           format: int64
