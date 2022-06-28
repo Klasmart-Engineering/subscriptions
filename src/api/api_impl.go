@@ -356,9 +356,11 @@ func (i Impl) GetSubscriptionsSubscriptionId(ctx echo.Context, monitoringContext
 
 	if apiAuth.ApiKey != nil || (apiAuth.Jwt != nil && apiAuth.Jwt.SubscriptionId == subscription.Id.String()) {
 		jsonContentOrLog(monitoringContext, ctx, http.StatusOK, Subscription{
-			AccountId: subscription.AccountId,
-			Id:        subscription.Id,
-			State:     subscription.State.String(),
+			AccountId:      subscription.AccountId,
+			Id:             subscription.Id,
+			State:          subscription.State.String(),
+			SubscriptionId: subscription.Id,
+			CreatedOn:      subscription.CreatedAt.Unix(),
 		})
 		return nil
 	}
@@ -378,9 +380,11 @@ func (Impl) GetSubscriptions(ctx echo.Context, monitoringContext *monitoring.Con
 	if exists && apiAuth.ApiKey != nil || (apiAuth.Jwt != nil && apiAuth.Jwt.SubscriptionId == subscription.Id.String()) {
 		jsonContentOrLog(monitoringContext, ctx, http.StatusOK, []Subscription{
 			{
-				AccountId: subscription.AccountId,
-				Id:        subscription.Id,
-				State:     subscription.State.String(),
+				AccountId:      subscription.AccountId,
+				Id:             subscription.Id,
+				State:          subscription.State.String(),
+				SubscriptionId: subscription.Id,
+				CreatedOn:      subscription.CreatedAt.Unix(),
 			},
 		})
 		return nil

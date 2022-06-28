@@ -111,9 +111,11 @@ func TestGetSubscriptionWithJwtReturns200(t *testing.T) {
 
 	require.Equal(t, 200, resp.StatusCode)
 	require.Equal(t, api.Subscription{
-		AccountId: uuid.MustParse("be372162-c0a0-4903-a9e1-a0b372bb1de9"),
-		Id:        uuid.MustParse("c683d6cd-df69-40aa-b268-58e7237e3225"),
-		State:     "disabled",
+		AccountId:      uuid.MustParse("be372162-c0a0-4903-a9e1-a0b372bb1de9"),
+		Id:             uuid.MustParse("c683d6cd-df69-40aa-b268-58e7237e3225"),
+		State:          "disabled",
+		SubscriptionId: uuid.MustParse("c683d6cd-df69-40aa-b268-58e7237e3225"),
+		CreatedOn:      1656374400,
 	}, responseBody)
 }
 
@@ -140,8 +142,10 @@ func TestGetSubscriptionWithApiKeyReturns200(t *testing.T) {
 
 	require.Equal(t, 200, resp.StatusCode)
 	require.Equal(t, api.Subscription{
-		AccountId: uuid.MustParse("be372162-c0a0-4903-a9e1-a0b372bb1de9"),
-		Id:        uuid.MustParse("c683d6cd-df69-40aa-b268-58e7237e3225"),
-		State:     "disabled",
+		AccountId:      uuid.MustParse("be372162-c0a0-4903-a9e1-a0b372bb1de9"),
+		Id:             uuid.MustParse("c683d6cd-df69-40aa-b268-58e7237e3225"),
+		State:          "disabled",
+		SubscriptionId: uuid.MustParse("c683d6cd-df69-40aa-b268-58e7237e3225"),
+		CreatedOn:      1656374400,
 	}, responseBody)
 }
