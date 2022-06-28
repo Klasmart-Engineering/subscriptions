@@ -115,6 +115,7 @@ func TestGetSubscriptionByAccountIdWithApiKeyReturns200(t *testing.T) {
 		AccountId: uuid.MustParse("be372162-c0a0-4903-a9e1-a0b372bb1de9"),
 		Id:        uuid.MustParse("c683d6cd-df69-40aa-b268-58e7237e3225"),
 		State:     "disabled",
+		CreatedOn: 1656374400,
 	}, responseBody[0])
 }
 
@@ -146,6 +147,7 @@ func TestGetSubscriptionByAccountIdWithJwtReturns200(t *testing.T) {
 		AccountId: uuid.MustParse("be372162-c0a0-4903-a9e1-a0b372bb1de9"),
 		Id:        uuid.MustParse("c683d6cd-df69-40aa-b268-58e7237e3225"),
 		State:     "disabled",
+		CreatedOn: 1656374400,
 	}, responseBody[0])
 }
 

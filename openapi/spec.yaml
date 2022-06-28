@@ -221,6 +221,7 @@ components:
         - id
         - account_id
         - state
+        - created_on
       properties:
         id:
           type: string
@@ -230,6 +231,9 @@ components:
           format: uuid
         state:
           type: string
+        created_on:
+          type: integer
+          format: int64
     UsageReports:
       required:
         - id

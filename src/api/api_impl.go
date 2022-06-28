@@ -359,6 +359,7 @@ func (i Impl) GetSubscriptionsSubscriptionId(ctx echo.Context, monitoringContext
 			AccountId: subscription.AccountId,
 			Id:        subscription.Id,
 			State:     subscription.State.String(),
+			CreatedOn: subscription.CreatedAt.Unix(),
 		})
 		return nil
 	}
@@ -381,6 +382,7 @@ func (Impl) GetSubscriptions(ctx echo.Context, monitoringContext *monitoring.Con
 				AccountId: subscription.AccountId,
 				Id:        subscription.Id,
 				State:     subscription.State.String(),
+				CreatedOn: subscription.CreatedAt.Unix(),
 			},
 		})
 		return nil
